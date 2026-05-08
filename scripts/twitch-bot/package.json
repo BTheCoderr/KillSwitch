@@ -1,0 +1,15 @@
+{
+  "name": "killswitch-twitch-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone Twitch chat bot that pipes !commands into the Killswitch Supabase tables",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2",
+    "dotenv": "^16",
+    "tmi.js": "^1"
+  }
+}
