@@ -52,6 +52,11 @@ export const metadata: Metadata = {
   },
   description,
   applicationName: "Killswitch",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    /** Legacy clients probe `/favicon.ico`; redirected in next.config.ts to the same SVG. */
+    shortcut: "/icon.svg",
+  },
   keywords: [
     "live coding",
     "competitive programming",
