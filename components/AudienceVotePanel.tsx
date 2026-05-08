@@ -18,7 +18,7 @@ function seededVotes(seed: string) {
 
 export function AudienceVotePanel() {
   const [selected, setSelected] = useState<string | null>(null);
-  const baseCounts = useMemo(() => seededVotes("killswitch-demo"), []);
+  const baseCounts = useMemo(() => seededVotes("killswitch-season-zero-votes"), []);
 
   const counts = useMemo(() => {
     const map = Object.fromEntries(baseCounts.map((c) => [c.id, c.count]));
@@ -36,10 +36,10 @@ export function AudienceVotePanel() {
       <div className="relative border-b border-neon-green/10 bg-black/45 px-4 py-3">
         <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-white uppercase">
           <Zap className="size-4 fill-neon-green text-neon-green" />
-          Audience Modifier
+          Audience vote
         </div>
-        <p className="mt-1 text-xs text-highlight-dim/60">
-          Vote to trigger a modifier — local demo, no backend.
+        <p className="mt-1 text-xs text-highlight-dim/65">
+          Preview pulses—your vote shifts counts in-session; synced tallies plug in alongside live infra.
         </p>
       </div>
       <ul className="relative divide-y divide-white/5 p-2">
@@ -56,7 +56,7 @@ export function AudienceVotePanel() {
                   "relative flex w-full items-center justify-between overflow-hidden rounded-lg border px-3 py-3 text-left transition",
                   active
                     ? "border-neon-green/50 bg-neon-green/10 shadow-[0_0_20px_rgb(57_255_20_/_0.1)]"
-                    : "border-white/10 bg-slate-dark/60 hover:border-white/20",
+                    : "border-white/10 bg-slate-dark/60 hover:border-white/22",
                 )}
               >
                 <div
@@ -65,11 +65,11 @@ export function AudienceVotePanel() {
                 />
                 <div className="relative">
                   <p className="text-sm font-semibold text-white">{opt.label}</p>
-                  <p className="text-[11px] text-highlight-dim/50">+{pct}%</p>
+                  <p className="text-[11px] text-highlight-dim/50">{pct}% weighted</p>
                 </div>
                 <div className="relative flex items-center gap-2">
-                  <span className="rounded bg-neon-green/15 px-2 py-0.5 text-[10px] font-bold text-neon-green">
-                    VOTE
+                  <span className="rounded bg-neon-green/18 px-2 py-0.5 text-[10px] font-bold text-neon-green">
+                    CAST
                   </span>
                   {active && <Check className="size-4 text-neon-green" />}
                 </div>
@@ -79,7 +79,7 @@ export function AudienceVotePanel() {
         })}
       </ul>
       <div className="border-t border-neon-green/10 bg-black/30 px-4 py-2 text-right">
-        <span className="text-xs text-highlight-dim/50">Total votes </span>
+        <span className="text-xs text-highlight-dim/50">Simulated ballots </span>
         <span className="font-mono text-sm font-bold text-neon-green">
           {total.toLocaleString()}
         </span>

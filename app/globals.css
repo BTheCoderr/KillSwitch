@@ -1,13 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-stealth: #0f1117;
-  --color-slate-dark: #1c202b;
+  --color-blackout: #05070a;
+  --color-stealth: #0b0f17;
+  --color-slate-dark: #151c28;
   --color-neon-green: #39ff14;
-  --color-electric-blue: #2979ff;
+  --color-electric-blue: #2797ff;
   --color-volt-purple: #8a2be2;
-  --color-highlight: #e6e6e6;
-  --color-highlight-dim: #a0a0a0;
+  --color-highlight: #e6e8ec;
+  --color-highlight-dim: #9599a3;
+  --color-danger-red: #ff3b30;
 
   --font-heading: var(--font-rajdhani), "Rajdhani", ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-space-grotesk), "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
@@ -21,12 +23,12 @@
   }
 
   body {
-    @apply min-h-screen bg-stealth text-highlight antialiased;
+    @apply min-h-screen bg-blackout text-highlight antialiased;
     background-image:
-      radial-gradient(ellipse 120% 60% at 50% -20%, rgb(138 43 226 / 0.18), transparent 50%),
-      radial-gradient(ellipse 80% 50% at 100% 40%, rgb(57 255 20 / 0.04), transparent 45%),
-      radial-gradient(ellipse 60% 40% at 0% 80%, rgb(41 121 255 / 0.06), transparent 50%),
-      linear-gradient(180deg, var(--color-stealth) 0%, #0a0c12 100%);
+      radial-gradient(ellipse 120% 60% at 50% -20%, rgb(138 43 226 / 0.16), transparent 50%),
+      radial-gradient(ellipse 80% 50% at 100% 40%, rgb(57 255 20 / 0.05), transparent 45%),
+      radial-gradient(ellipse 60% 40% at 0% 80%, rgb(39 151 255 / 0.07), transparent 50%),
+      linear-gradient(180deg, var(--color-blackout) 0%, var(--color-stealth) 100%);
   }
 
   ::selection {
@@ -36,18 +38,18 @@
 
 @layer utilities {
   .ks-panel {
-    @apply relative border border-neon-green/15 bg-slate-dark/80 shadow-[0_0_0_1px_rgb(138_43_226_/_0.1),inset_0_1px_0_0_rgb(255_255_255_/_0.03)];
+    @apply relative border border-neon-green/15 bg-slate-dark/90 shadow-[0_0_0_1px_rgb(138_43_226_/_0.08),inset_0_1px_0_0_rgb(255_255_255_/_0.04)];
   }
 
   .ks-panel::before {
     content: "";
-    @apply pointer-events-none absolute inset-0 opacity-30;
+    @apply pointer-events-none absolute inset-0 opacity-[0.35];
     background-image: repeating-linear-gradient(
       0deg,
       transparent,
       transparent 2px,
-      rgb(0 0 0 / 0.1) 2px,
-      rgb(0 0 0 / 0.1) 3px
+      rgb(0 0 0 / 0.12) 2px,
+      rgb(0 0 0 / 0.12) 3px
     );
   }
 
@@ -63,29 +65,60 @@ body:has(#overlay-root) {
   background-image: none !important;
 }
 
-/* Glitch/modifier alert animation (UI elements: alerts, banners) */
 @keyframes glitch-flicker {
-  0%, 100% { opacity: 1; }
-  10% { opacity: 0.85; transform: translate(-2px, 1px); }
-  20% { opacity: 1; transform: translate(1px, -1px); }
-  30% { opacity: 0.9; transform: translate(-1px, 2px); }
-  50% { opacity: 1; transform: translate(0); }
-  70% { opacity: 0.88; transform: translate(2px, -1px); }
-  80% { opacity: 1; transform: translate(-1px, 1px); }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  10% {
+    opacity: 0.85;
+    transform: translate(-2px, 1px);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(1px, -1px);
+  }
+  30% {
+    opacity: 0.9;
+    transform: translate(-1px, 2px);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(0);
+  }
+  70% {
+    opacity: 0.88;
+    transform: translate(2px, -1px);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-1px, 1px);
+  }
 }
 
 .glitch-alert {
   animation: glitch-flicker 0.6s ease-in-out infinite;
 }
 
-/* "Chat Interference" full-panel glitch — applied to code panels when modifier is active */
 @keyframes glitch {
-  0%   { transform: translate(0); }
-  20%  { transform: translate(-2px, 2px); }
-  40%  { transform: translate(-2px, -2px); }
-  60%  { transform: translate(2px, 2px); }
-  80%  { transform: translate(2px, -2px); }
-  100% { transform: translate(0); }
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
 }
 
 .glitch-active {
@@ -94,32 +127,34 @@ body:has(#overlay-root) {
   pointer-events: none;
 }
 
-/* Softer variant for overlays that sit on top of iframes */
 .glitch-overlay {
   animation: glitch 0.3s infinite;
   filter: hue-rotate(60deg) saturate(2);
 }
 
-/* Scanline effect for broadcast feel */
 .scanlines::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.04;
+  opacity: 0.045;
   background-image: repeating-linear-gradient(
     0deg,
     transparent,
     transparent 2px,
-    rgb(0 0 0 / 0.3) 2px,
-    rgb(0 0 0 / 0.3) 4px
+    rgb(0 0 0 / 0.35) 2px,
+    rgb(0 0 0 / 0.35) 4px
   );
 }
 
-/* Neon glow pulse */
 @keyframes neon-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgb(57 255 20 / 0.3), 0 0 24px rgb(57 255 20 / 0.1); }
-  50% { box-shadow: 0 0 16px rgb(57 255 20 / 0.5), 0 0 48px rgb(57 255 20 / 0.2); }
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgb(57 255 20 / 0.35), 0 0 24px rgb(57 255 20 / 0.12);
+  }
+  50% {
+    box-shadow: 0 0 16px rgb(57 255 20 / 0.55), 0 0 48px rgb(57 255 20 / 0.22);
+  }
 }
 
 .neon-glow {

@@ -1,5 +1,6 @@
 export type NavItem = { href: string; label: string };
 
+/** Main marketing nav — Season Zero funnel (marketing shell; integrations ship alongside launch). */
 export const navItems: NavItem[] = [
   { href: "/", label: "Home" },
   { href: "/arena", label: "Arena" },
@@ -7,38 +8,51 @@ export const navItems: NavItem[] = [
   { href: "/apply", label: "Apply" },
   { href: "/sponsor", label: "Sponsor" },
   { href: "/replays", label: "Replays" },
-  { href: "/control", label: "Control" },
-  { href: "/grid", label: "Grid" },
-  { href: "/live", label: "Live" },
 ];
+
+/**
+ * Live coding = stream-ready arena (OBS panels, votes, AI copy)—not a hosted runner yet.
+ */
+export const mvpLiveCodingPositioning = {
+  headline: "Develop a livestream-ready MVP with live coding battle rooms.",
+  scopeNote:
+    "Contestants work in embeddable surfaces (Replit, StackBlitz, etc.); this release is the broadcast cockpit—dual code panels, audience votes, and AI narration—wired for stream—not a sandbox execution core.",
+  pillars: [
+    "Live coding battle rooms",
+    "Real-time contestant code panels",
+    "Audience voting during matches",
+    "AI match explanation",
+    "Tournament and replay flow",
+  ],
+} as const;
 
 export type VoteOption = { id: string; label: string; short: string };
 
 export const audienceVoteOptions: VoteOption[] = [
-  { id: "reverse-iteration", label: "Reverse Iteration", short: "Reverse" },
-  { id: "time-crunch", label: "Time Crunch", short: "Crunch" },
-  { id: "memory-limit", label: "Memory Limit", short: "Mem Limit" },
-  { id: "no-backspace", label: "No Backspace", short: "No BS" },
+  { id: "add-time-pressure", label: "Add Time Pressure", short: "Time" },
+  { id: "reveal-hidden-test", label: "Reveal Hidden Test", short: "Test" },
+  { id: "force-explanation", label: "Force Explanation", short: "Explain" },
+  { id: "no-built-ins", label: "No Built-ins", short: "No lib" },
 ];
 
 export const liveMatch = {
   contestantA: "LUNA",
   contestantB: "REX",
-  round: 3,
-  timer: "04:37",
-  bestOf: 5,
-  viewers: 12_842,
-  prizePool: "$1,000",
-  problem: "Minimum Operations to Sort",
+  round: 2,
+  timer: "18:42",
+  bestOf: 3,
+  viewers: 12_458,
+  prizePool: "$25,000",
+  problem: "Min Operations",
   difficulty: "Medium" as const,
-  sponsorLine: "KILLSWITCH",
+  sponsorBrand: "DEVFORGE",
   analystSnippet:
-    "Luna uses selection sort O(n^2). Rex uses index mapping to minimize swaps. Rex's approach is more optimal on large inputs.",
+    "Luna is brute-forcing swaps with selection-style scans. Rex is parking indices—if judges stress massive inputs, Rex’s swaps likely stay leaner.",
   languageA: "Python",
   languageB: "Python",
 };
 
-export type TournamentStatus = "Applications Open" | "Coming Soon";
+export type TournamentStatus = "Applications Open" | "Early Access";
 
 export type Tournament = {
   id: string;
@@ -53,7 +67,7 @@ export const tournaments: Tournament[] = [
   {
     id: "launch-001",
     title: "Launch Bracket 001",
-    description: "Beginner-friendly battle royale",
+    description: "Beginner-friendly opener—four builders, zero hand-holding edits.",
     contestants: 4,
     prize: "$250",
     status: "Applications Open",
@@ -61,28 +75,28 @@ export const tournaments: Tournament[] = [
   {
     id: "frontend-frenzy",
     title: "Frontend Frenzy",
-    description: "React speed-build under pressure",
+    description: "React speed-build melee for UI engineers wired for chaos.",
     prize: "$500",
-    status: "Coming Soon",
+    status: "Early Access",
   },
   {
     id: "algorithm-arena",
     title: "Algorithm Arena",
-    description: "Data structures and pure algorithmic skill",
+    description: "DS&A gauntlet for operators who breathe Big-O aloud.",
     prize: "$1,000",
-    status: "Coming Soon",
+    status: "Early Access",
   },
 ];
 
 export type ReplayCard = { id: string; title: string; subtitle: string };
 
 export const replays: ReplayCard[] = [
-  { id: "r1", title: "Launch Bracket 001", subtitle: "Coming Soon" },
-  { id: "r2", title: "Best Compile Moments", subtitle: "Coming Soon" },
+  { id: "r1", title: "Launch Bracket 001", subtitle: "Season Zero" },
+  { id: "r2", title: "Best Compile Moments", subtitle: "Beta access" },
   {
     id: "r3",
     title: "AI Breakdown: Winning Solutions",
-    subtitle: "Coming Soon",
+    subtitle: "Season Zero",
   },
 ];
 
@@ -99,7 +113,7 @@ export const sponsorPackages: SponsorPackage[] = [
     name: "Launch Sponsor",
     price: "$500",
     bullets: [
-      "Your logo on one event stream, overlay, and replay page.",
+      "Your logo on one event page, stream overlay, and replay page.",
     ],
   },
   {
@@ -122,44 +136,44 @@ export const sponsorPackages: SponsorPackage[] = [
 
 export const sponsorPageCopy = {
   headline: "Reach developers while they are actually paying attention.",
-  body: "KILLSWITCH turns developer attention into a live competitive event: real-time coding, audience modifiers, AI commentary, and replayable moments built for technical audiences.",
+  body: "Killswitch turns developer attention into a live competitive event: real-time coding, audience voting, AI commentary, and replayable moments built for technical audiences.",
 };
 
 export const howItWorks = [
   {
-    title: "Enter the arena",
-    body: "Developers face off live with real stakes, a visible clock, and problems tuned for broadcast clarity.",
+    title: "Lights on. Clock’s live.",
+    body: "Battle rooms are built for OBS: dual feeds, ruthless clocks, and layouts that survive 1080p blow-ups.",
   },
   {
-    title: "Crowd controls chaos",
-    body: "Chat commands reshape the match — time crunch, memory limits, and reversed iteration on demand.",
+    title: "Votes detonate twists",
+    body: "The crowd jams new constraints mid-round—nothing theoretical, everything visceral.",
   },
   {
-    title: "AI explains the fight",
-    body: "An on-screen analyst breaks down tactics and complexity so viewers never lose the thread.",
+    title: "AI keeps everyone sharp",
+    body: "Match explanation stitches tactics for chat and co-streams—framed alongside tournament rails and replay drops so the season reads as one arc.",
   },
 ];
 
 export const audiencePowers = [
   {
-    title: "Reverse Iteration",
-    body: "Force contestants to flip their loop logic under pressure.",
-    optionId: "reverse-iteration",
+    title: "Bleed the clock",
+    body: "Crush their breathing room until fundamentals surface.",
+    optionId: "add-time-pressure",
   },
   {
-    title: "Time Crunch",
-    body: "Slash the clock — survivors separate from pretenders.",
-    optionId: "time-crunch",
+    title: "Drop the veil",
+    body: "Surface a stealth test—the arena watches the pivot live.",
+    optionId: "reveal-hidden-test",
   },
   {
-    title: "Memory Limit",
-    body: "Cap allocations and expose who writes lean code.",
-    optionId: "memory-limit",
+    title: "Force narration",
+    body: "No silent refactoring—explain the gambit before the next compile.",
+    optionId: "force-explanation",
   },
   {
-    title: "No Backspace",
-    body: "Type once, type right. Every keystroke is permanent.",
-    optionId: "no-backspace",
+    title: "Kill the cheats",
+    body: "Strip cuddly builtins; raw logic earns the handshake.",
+    optionId: "no-built-ins",
   },
 ] as const;
 

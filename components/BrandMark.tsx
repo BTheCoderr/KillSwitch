@@ -16,7 +16,7 @@ export function BrandMark({ className, compact }: BrandMarkProps) {
         className,
       )}
     >
-      <span className="relative flex size-9 items-center justify-center rounded-md border border-neon-green/40 bg-slate-dark/90 shadow-[0_0_20px_rgb(57_255_20_/_0.25)] neon-glow">
+      <span className="relative flex size-9 items-center justify-center rounded-md border border-neon-green/40 bg-slate-dark/90 shadow-[0_0_20px_rgb(57_255_20_/_0.22)] neon-glow">
         <Zap
           className="size-5 fill-neon-green text-neon-green"
           strokeWidth={2}
@@ -24,8 +24,8 @@ export function BrandMark({ className, compact }: BrandMarkProps) {
         />
       </span>
       {!compact && (
-        <span className="font-heading text-xl font-bold tracking-wider text-white uppercase">
-          KILL<span className="text-neon-green">SWITCH</span>
+        <span className="font-heading text-xl font-bold tracking-tight text-white">
+          Kill<span className="text-neon-green">switch</span>
         </span>
       )}
     </Link>

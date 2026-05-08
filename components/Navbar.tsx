@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { BrandMark } from "@/components/BrandMark";
+import { SeasonZeroBadge } from "@/components/SeasonZeroBadge";
 import { navItems } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
@@ -13,9 +14,12 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-neon-green/10 bg-stealth/85 backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-neon-green/10 bg-blackout/90 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 md:h-[4.25rem] md:px-6">
-        <BrandMark />
+        <div className="flex min-w-0 items-center gap-2">
+          <BrandMark />
+          <SeasonZeroBadge className="inline-flex shrink-0 scale-95 origin-left" />
+        </div>
         <nav className="hidden items-center gap-1 md:flex">
           {navItems.map((item) => {
             const active =
@@ -52,7 +56,7 @@ export function Navbar() {
       {open && (
         <div
           id="mobile-nav"
-          className="border-t border-neon-green/10 bg-stealth/95 px-4 py-4 md:hidden"
+          className="border-t border-neon-green/10 bg-blackout/95 px-4 py-4 md:hidden"
         >
           <div className="flex flex-col gap-1">
             {navItems.map((item) => (

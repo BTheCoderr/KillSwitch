@@ -8,6 +8,7 @@ type TournamentCardProps = {
 
 export function TournamentCard({ tournament, className }: TournamentCardProps) {
   const open = tournament.status === "Applications Open";
+  const betaWaitlist = tournament.status === "Early Access";
 
   return (
     <article
@@ -27,10 +28,12 @@ export function TournamentCard({ tournament, className }: TournamentCardProps) {
               "rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ring-1",
               open
                 ? "bg-neon-green/15 text-neon-green ring-neon-green/35"
-                : "bg-highlight/10 text-highlight-dim ring-white/15",
+                : betaWaitlist
+                  ? "bg-electric-blue/15 text-electric-blue ring-electric-blue/35"
+                  : "bg-highlight/10 text-highlight-dim ring-white/15",
             )}
           >
-            {tournament.status}
+            {open ? tournament.status : betaWaitlist ? "Beta waitlist open" : tournament.status}
           </span>
           {typeof tournament.contestants === "number" && (
             <span className="text-xs text-highlight-dim/55">

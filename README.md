@@ -1,8 +1,35 @@
-# KILLSWITCH
+# Killswitch
 
 > Code Under Pressure. A live competitive coding show — 4 contestants, one problem, audience-controlled chaos.
 
-A real-time broadcast surface for OBS: a 2×2 grid of live code editors, an HUD with timer and modifiers, and a producer admin that fires modifiers and counts chat votes. Built for the camera first.
+Public pages ship a **front-end MVP**: OBS/stream-first arena UI—not a hosted code execution engine yet. Contestants use embeddable editors; Killswitch owns the broadcast shell.
+
+---
+
+## Roadmap
+
+**Develop a livestream-ready MVP with live coding battle rooms.**
+
+The **current MVP** messaging and UI center on:
+
+- Live coding battle rooms  
+- Real-time contestant code panels  
+- Audience voting during matches  
+- AI match explanation  
+- Tournament and replay flow  
+
+**Explicitly not in this MVP pass:** hosted code execution, viewer auth, payments, or new persistence beyond what is already wired elsewhere in the repo.
+
+A real-time broadcast surface for OBS (plus optional Supabase-backed producer routes): 2×2 grid of live code editors, HUD with timer and modifiers, and producer tools for modifiers and votes. Built for the camera first.
+
+### Open Graph image (TODO)
+
+There is **no** `public/` directory or share image in-repo yet, so `app/layout.tsx` does not define `openGraph.images`. For launch link previews, add e.g. `public/og.png` (recommended **1200×630**), then wire it in metadata:
+
+```ts
+// app/layout.tsx — openGraph / twitter
+images: [{ url: "/og.png", width: 1200, height: 630, alt: "Killswitch" }],
+```
 
 **Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 · Supabase (Postgres + Realtime) · Framer Motion · Lucide.
 
@@ -19,7 +46,8 @@ A real-time broadcast surface for OBS: a 2×2 grid of live code editors, an HUD 
 | `/control`       | Alternate match-control UI                                              |
 | `/sim`           | Local vote simulator                                                    |
 | `/grid`          | Standalone 2×2 embed grid                                               |
-| `/arena`         | Static mock dashboard                                                   |
+| `/arena`         | Stream-ready **Season Zero HUD** (beta panels—embed integrations roll out alongside launch brackets) |
+| `/apply`         | Competitor form (MVP UX only — client state, wire storage separately) |
 | `/api/commentary`| `POST` → returns a placeholder commentary line (swap for LLM later)     |
 
 The contestant embed field is still called `replit_url` in the DB but holds **any** embed URL — StackBlitz, Playcode, Replit, etc. No viewer auth required.
@@ -39,7 +67,8 @@ cp .env.local.example .env.local
 # 3. Provision Supabase
 #    Open your Supabase project → SQL Editor → paste & run:
 #    supabase/migrations/001_schema.sql
-#    (creates matches/players/votes, enables Realtime, sets permissive RLS)
+#    supabase/migrations/002_applications.sql
+#    (001: matches/players/votes + Realtime; 002: applications intake, insert-only RLS)
 
 # 4. Dev
 npm run dev          # http://localhost:3000
@@ -67,13 +96,14 @@ npm run build
 
 ## Supabase
 
-Schema lives at `supabase/migrations/001_schema.sql`. Three tables:
+Schema files: `supabase/migrations/001_schema.sql`, `002_applications.sql`.
 
 - `matches` — `status`, `round`, `best_of`, `timer`, `active_modifier`, `problem_*`
 - `players` — slot 1–4, `replit_url` (any embed URL), `language`, `score`
 - `votes` — `command` (e.g. `darkmode`, `no-backspace`)
+- `applications` — competitor `/apply` submissions; **INSERT-only** for `anon` (no public `SELECT`; review in Supabase **Table Editor**)
 
-The migration enables Realtime on all three and adds permissive RLS for the MVP. Tighten before opening to the public.
+`001` enables Realtime on matches/players/votes and uses permissive RLS for the broadcast MVP. **`applications`** uses stricter RLS: anyone can insert, nobody can read via the anon API. Tighten further before going wide.
 
 ---
 

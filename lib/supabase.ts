@@ -28,3 +28,19 @@ export function getSupabaseServer() {
     key || "placeholder-key",
   );
 }
+
+/**
+ * Supabase admin client — **SERVER-ONLY.** Uses `SUPABASE_SERVICE_ROLE_KEY`; never import from client bundles.
+ *
+ * Use in Route Handlers / Server Actions for privileged writes (e.g. waitlist inserts).
+ */
+export function getSupabaseAdmin() {
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  if (!isValidUrl(url) || !serviceRole) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
+  return createClient(url, serviceRole, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
