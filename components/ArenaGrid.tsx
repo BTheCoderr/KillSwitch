@@ -194,6 +194,7 @@ export default function ArenaGrid({ matchId: propMatchId }: ArenaGridProps) {
             </div>
           )}
           <CountdownTimer
+            key={`${match.id}:${match.status}:${match.timer}:${match.timer_started_at ?? ""}`}
             seconds={match.timer}
             startedAt={match.timer_started_at}
             running={match.status === "active"}
