@@ -94,9 +94,9 @@ cp .env.local.example .env.local
 #    supabase/migrations/002_applications.sql
 #    supabase/migrations/003_waitlist_subscribers.sql
 #
-#    Before public launch, review/apply the generated equivalents of:
-#    supabase/security_hardening.sql
-#    supabase/timer_upgrade.sql
+#    Production hardening and the authoritative timer migration are already
+#    applied to the canonical KillSwitch Supabase project. The exact live
+#    migration history is tracked under supabase/migrations/.
 
 # 4. Optional: seed one rehearsal match after the database is ready
 npm run seed:season-zero
@@ -160,12 +160,21 @@ The `.glitch-active` / `.glitch-overlay` / `.glitch-alert` / `.scanlines` styles
 
 Vercel auto-detects Next.js — no `vercel.json` needed.
 
-### Option A — GitHub → Vercel dashboard
+### Fresh project import
 
-1. Push this repo to GitHub.
-2. [vercel.com/new](https://vercel.com/new) → Import the repo.
-3. Add env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-4. Deploy. Use the production URL as your OBS Browser Source.
+1. In Vercel, create a new project and import `BTheCoderr/KillSwitch`.
+2. Keep the default Next.js framework detection, repository root, install command, and build command.
+3. Add the required production environment variables from `.env.local.example`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `KILLSWITCH_ADMIN_USER`
+   - `KILLSWITCH_ADMIN_PASSWORD`
+4. Deploy once, then set `NEXT_PUBLIC_SITE_URL` to the canonical production origin and redeploy so metadata/social previews use the final URL.
+5. Verify `/api/health` reports ready before the dress rehearsal.
+6. Use the production `/live` URL as the OBS Browser Source.
+
+Do not create a second GitHub repository for this import; the canonical source remains `BTheCoderr/KillSwitch`.
 
 ### Option B — Vercel CLI
 
