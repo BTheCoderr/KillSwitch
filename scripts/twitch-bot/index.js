@@ -7,7 +7,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const TWITCH_CHANNEL = process.env.TWITCH_CHANNEL;
 const TWITCH_USERNAME = process.env.TWITCH_BOT_USERNAME;
-const TWITCH_OAUTH = process.env.TWITCH_BOT_OAUTH;
+const TWITCH_OAUTH = process.env.TWITCH_OAUTH_TOKEN || process.env.TWITCH_BOT_OAUTH;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error("Missing SUPABASE env vars in .env.local");
@@ -16,7 +16,7 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 if (!TWITCH_CHANNEL || !TWITCH_OAUTH) {
   console.error(
-    "Missing TWITCH_CHANNEL / TWITCH_BOT_OAUTH in .env.local — " +
+    "Missing TWITCH_CHANNEL / TWITCH_OAUTH_TOKEN in .env.local — " +
       "set them when you have credentials. Use /sim in the browser for now.",
   );
   process.exit(1);
@@ -60,10 +60,17 @@ async function castVote(command) {
   if (!activeMatchId) await findActiveMatch();
   if (!activeMatchId) return;
 
-  await supabase.from("votes").insert({
+  const { error } = await supabase.from("votes").insert({
     match_id: activeMatchId,
     command,
   });
+
+  if (error) {
+    console.error(`Vote rejected: ${command} — ${error.message}`);
+    if (/match/i.test(error.message)) activeMatchId = null;
+    return;
+  }
+
   console.log(`Vote cast: ${command}`);
 }
 
@@ -75,18 +82,18 @@ client.on("message", (_channel, _tags, message, self) => {
   const cmd = trimmed.slice(1).split(/\s+/)[0];
 
   if (VALID_COMMANDS.includes(cmd)) {
-    castVote(cmd);
+    void castVote(cmd);
   } else if (cmd === "vote") {
     const target = trimmed.slice(1).split(/\s+/)[1];
     if (target && VALID_COMMANDS.includes(target)) {
-      castVote(target);
+      void castVote(target);
     }
   }
 });
 
 client.on("connected", () => {
   console.log(`Connected to #${TWITCH_CHANNEL}`);
-  findActiveMatch();
+  void findActiveMatch();
 });
 
 client.connect().catch(console.error);

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:season-zero": "node --env-file=.env.local scripts/seed-season-zero.mjs",
+    "twitch:bot": "npm --prefix scripts/twitch-bot start"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
