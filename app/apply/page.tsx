@@ -9,11 +9,46 @@ import { conversionCopy } from "@/lib/conversionCopy";
 
 export default function ApplyPage() {
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // TODO: POST application payload to `/api/apply` → Supabase `applications` insert, Resend notify, or CRM.
-    setSent(true);
+    const form = e.currentTarget;
+    const data = new FormData(form);
+
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch("/api/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(data.get("name") ?? ""),
+          email: String(data.get("email") ?? ""),
+          portfolio: String(data.get("portfolio") ?? ""),
+          language: String(data.get("language") ?? ""),
+          experience: String(data.get("experience") ?? ""),
+          why: String(data.get("why") ?? ""),
+          live: String(data.get("live") ?? ""),
+          website: String(data.get("website") ?? ""),
+        }),
+      });
+
+      const json = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        setErrorMessage(json.error ?? "We couldn't save your application. Try again.");
+        return;
+      }
+
+      form.reset();
+      setSent(true);
+    } catch {
+      setErrorMessage("Network error. Check your connection and retry.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -54,10 +89,9 @@ export default function ApplyPage() {
         >
           {!sent ? (
             <div className="rounded-lg border border-neon-green/35 bg-neon-green/12 px-4 py-3.5 text-sm leading-relaxed text-highlight">
-              {/* TODO: Backend validation + persistence — anon insert to Supabase once RLS aligns with intake. */}
               <strong className="font-semibold text-neon-green">Early access intake:</strong> submit your
-              details below—we&apos;ll follow up via email once review opens for the first bracket. Client-side
-              confirmation only for now (no outbound send yet).
+              details below. Applications are validated server-side and stored for Season Zero review; we&apos;ll
+              follow up via email when bracket review opens.
             </div>
           ) : null}
 
@@ -96,6 +130,22 @@ export default function ApplyPage() {
             </div>
           ) : (
             <form className="mt-9 space-y-6" onSubmit={onSubmit}>
+              <input
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="hidden"
+              />
+              {errorMessage ? (
+                <p
+                  role="alert"
+                  className="rounded-lg border border-danger-red/40 bg-danger-red/10 px-4 py-3 text-sm text-danger-red"
+                >
+                  {errorMessage}
+                </p>
+              ) : null}
               <div className="grid gap-6 md:grid-cols-2">
                 <Field label="Name" name="name" placeholder="Jordan Vale" required />
                 <Field label="Email" name="email" type="email" placeholder="you@build.dev" required />
@@ -146,9 +196,10 @@ export default function ApplyPage() {
               </fieldset>
               <button
                 type="submit"
-                className="w-full rounded-lg bg-neon-green py-3.5 text-sm font-black text-blackout shadow-[0_0_32px_rgb(57_255_20_/_0.26)] hover:brightness-110 md:w-auto md:min-w-[200px] md:px-10"
+                disabled={loading}
+                className="w-full rounded-lg bg-neon-green py-3.5 text-sm font-black text-blackout shadow-[0_0_32px_rgb(57_255_20_/_0.26)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto md:min-w-[200px] md:px-10"
               >
-                Submit Application
+                {loading ? "Submitting…" : "Submit Application"}
               </button>
             </form>
           )}

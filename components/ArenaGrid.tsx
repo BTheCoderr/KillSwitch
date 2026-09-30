@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Brain, Radio, Zap } from "lucide-react";
+import { CountdownTimer } from "@/components/battle/CountdownTimer";
+import { normalizeEmbedUrl } from "@/lib/embed";
 import { getSupabase } from "@/lib/supabase";
 import type { Match, Player, Vote } from "@/lib/types";
 import { MODIFIER_OPTIONS } from "@/lib/types";
@@ -9,18 +11,6 @@ import { MODIFIER_OPTIONS } from "@/lib/types";
 type ArenaGridProps = {
   matchId?: string;
 };
-
-/**
- * Embed URL prefixes — players can paste full URLs from any provider.
- * For the zero-config MVP we support Playcode, StackBlitz, and Replit.
- * Just paste the full embed URL into the player's `replit_url` field.
- *
- * Examples:
- *   Playcode:   https://playcode.io/embed/PROJECT_ID
- *   StackBlitz: https://stackblitz.com/edit/PROJECT?embed=1
- *   Replit:     https://replit.com/@user/project?embed=true
- */
-const EMBED_FALLBACK = "https://playcode.io/";
 
 const SLOT_BORDER = [
   "border-[#39FF14]",
@@ -156,12 +146,6 @@ export default function ArenaGrid({ matchId: propMatchId }: ArenaGridProps) {
     };
   }, [propMatchId]);
 
-  function formatTime(sec: number) {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  }
-
   const sortedPlayers = useMemo(() => {
     const slots: (Player | null)[] = [null, null, null, null];
     for (const p of players) {
@@ -209,19 +193,19 @@ export default function ArenaGrid({ matchId: propMatchId }: ArenaGridProps) {
               )}
             </div>
           )}
-          <div
-            className={`text-4xl font-black tabular-nums tracking-wider ${
-              match.timer <= 30 ? "animate-pulse text-red-400" : "text-[#39FF14]"
-            }`}
-          >
-            {formatTime(match.timer)}
-          </div>
+          <CountdownTimer
+            key={`${match.id}:${match.status}:${match.timer}:${match.timer_started_at ?? ""}`}
+            seconds={match.timer}
+            startedAt={match.timer_started_at}
+            running={match.status === "active"}
+            className="text-4xl md:text-4xl"
+          />
         </div>
 
         <div className="hidden items-center gap-3 text-sm text-white/60 lg:flex">
           <Radio className="size-4 text-[#39FF14]" />
           <span className="font-mono">
-            {players.filter((p) => p.replit_url).length}/{players.length} embeds loaded
+            {players.filter((p) => normalizeEmbedUrl(p.replit_url)).length}/{players.length} embeds loaded
           </span>
         </div>
       </div>
@@ -269,24 +253,21 @@ export default function ArenaGrid({ matchId: propMatchId }: ArenaGridProps) {
               )}
             </div>
 
-            {/* Code embed (Playcode / StackBlitz / Replit — any URL) */}
-            {player?.replit_url ? (
+            {/* Editor embeds are restricted to the server-validated provider allowlist. */}
+            {normalizeEmbedUrl(player?.replit_url) ? (
               <iframe
-                src={
-                  player.replit_url.startsWith("http")
-                    ? player.replit_url
-                    : `${EMBED_FALLBACK}${player.replit_url}`
-                }
-                title={`${player.name} — Slot ${i + 1}`}
+                src={normalizeEmbedUrl(player?.replit_url) ?? undefined}
+                title={`${player?.name ?? `Slot ${i + 1}`} — Slot ${i + 1}`}
                 className={`h-full w-full transition-all ${
                   modifierActive ? "grayscale-[0.6]" : "grayscale-[0.3] group-hover:grayscale-0"
                 }`}
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                 allow="clipboard-write"
+                referrerPolicy="strict-origin-when-cross-origin"
               />
             ) : (
               <div className="flex h-full items-center justify-center bg-black/60 text-lg text-white/15">
-                {player ? "No embed URL" : "Empty slot"}
+                {player ? "No supported embed URL" : "Empty slot"}
               </div>
             )}
 
@@ -320,11 +301,11 @@ export default function ArenaGrid({ matchId: propMatchId }: ArenaGridProps) {
           )}
         </div>
 
-        {/* AI Explainer */}
+        {/* Match-aware live explainer */}
         <div className="rounded border-l-4 border-[#2979FF] bg-[#1C202B] p-3">
           <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#2979FF]">
             <Brain className="size-3.5" />
-            AI Explainer <span className="text-white/25 normal-case">(Beta)</span>
+            Live Explainer <span className="text-white/25 normal-case">(match-aware)</span>
           </h4>
           <p className="mt-1 text-sm leading-tight text-white/80">
             {commentary ??

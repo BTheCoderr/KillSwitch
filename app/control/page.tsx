@@ -119,6 +119,33 @@ export default function ControlPage() {
     }
   }
 
+  async function startTimer(seconds: number) {
+    if (!activeId) return;
+    try {
+      await adminMutation({ action: "startTimer", matchId: activeId, seconds });
+    } catch (error) {
+      console.error("Start timer failed", error);
+    }
+  }
+
+  async function pauseTimer() {
+    if (!activeId) return;
+    try {
+      await adminMutation({ action: "pauseTimer", matchId: activeId });
+    } catch (error) {
+      console.error("Pause timer failed", error);
+    }
+  }
+
+  async function advanceRound() {
+    if (!activeId) return;
+    try {
+      await adminMutation({ action: "advanceRound", matchId: activeId, seconds: 600 });
+    } catch (error) {
+      console.error("Advance round failed", error);
+    }
+  }
+
   async function upsertPlayer(slot: number, field: string, value: string | number) {
     if (!activeId) return;
     try {
@@ -217,12 +244,22 @@ export default function ControlPage() {
             <div className="flex items-center justify-between gap-4">
               <MatchControls
                 match={match}
-                onSetStatus={(s) => updateMatch({ status: s })}
-                onStartRound={(dur) => updateMatch({ timer: dur, status: "active" })}
-                onPause={() => updateMatch({ status: "lobby" })}
-                onAdvanceRound={() => updateMatch({ round: match.round + 1 })}
+                onSetStatus={(status) => {
+                  if (status === "active") void startTimer(match.timer || 600);
+                  else if (status === "lobby") void pauseTimer();
+                  else void updateMatch({ status });
+                }}
+                onStartRound={startTimer}
+                onPause={pauseTimer}
+                onAdvanceRound={advanceRound}
               />
-              <CountdownTimer seconds={match.timer} className="text-2xl md:text-4xl" />
+              <CountdownTimer
+                key={`${match.id}:${match.status}:${match.timer}:${match.timer_started_at ?? ""}`}
+                seconds={match.timer}
+                startedAt={match.timer_started_at}
+                running={match.status === "active"}
+                className="text-2xl md:text-4xl"
+              />
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <div>
@@ -310,7 +347,7 @@ export default function ControlPage() {
           <div className="ks-panel rounded-xl p-5">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold tracking-wider text-highlight-dim/50 uppercase">
-                AI commentary
+                Live explainer
               </p>
               <button
                 type="button"

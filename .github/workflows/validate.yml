@@ -34,8 +34,12 @@ jobs:
           KILLSWITCH_ADMIN_PASSWORD: ci-only-not-a-real-secret
         run: npm run build
 
-      - name: Verify producer security files
+      - name: Verify production control files
         run: |
           test -s proxy.ts
           test -s app/api/admin/mutate/route.ts
+          test -s app/api/apply/route.ts
+          test -s lib/embed.ts
+          test -s lib/timer.ts
           test -s supabase/security_hardening.sql
+          test -s supabase/timer_upgrade.sql

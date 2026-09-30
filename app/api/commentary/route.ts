@@ -1,55 +1,96 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase";
-import type { Player } from "@/lib/types";
+import type { Match, Player, Vote } from "@/lib/types";
 
-const PLACEHOLDER_LINES = [
-  "Player 1 just refactored mid-match — bold move or wasted clock? The audience is leaning into it.",
-  "Two contestants chose the same algorithm but wildly different implementations. Style points matter.",
-  "The modifier is burning through focus — you can see Slot 3 scrambling to re-read their own code.",
-  "Someone forgot to handle the edge case. Chat is going to feast on this.",
-  "Slot 2 is writing surprisingly clean code under pressure — the audience smells a dark-horse run.",
-  "This round is closer than it looks. One hidden test could flip the leaderboard.",
-  "Luna uses selection sort O(n^2). Rex uses index mapping to minimize swaps. Rex's approach is more optimal on large inputs.",
-  "The No Backspace modifier just fired — watch for the typo tax in the next 30 seconds.",
-];
+function buildCommentary(match: Match, players: Player[], votes: Vote[]) {
+  const ranked = [...players].sort((a, b) => b.score - a.score);
+  const leader = ranked[0];
+  const runnerUp = ranked[1];
+
+  const counts = new Map<string, number>();
+  for (const vote of votes) counts.set(vote.command, (counts.get(vote.command) ?? 0) + 1);
+  const topVote = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+
+  const parts: string[] = [];
+
+  if (match.problem_title) {
+    parts.push(
+      `Round ${match.round} is on ${match.problem_title}${match.problem_difficulty ? ` (${match.problem_difficulty})` : ""}.`,
+    );
+  } else {
+    parts.push(`Round ${match.round} is live.`);
+  }
+
+  if (leader) {
+    if (runnerUp) {
+      const gap = leader.score - runnerUp.score;
+      parts.push(
+        gap === 0
+          ? `${leader.name} and ${runnerUp.name} are tied at ${leader.score}.`
+          : `${leader.name} leads ${runnerUp.name} by ${gap} point${gap === 1 ? "" : "s"}.`,
+      );
+    } else {
+      parts.push(`${leader.name} leads with ${leader.score} point${leader.score === 1 ? "" : "s"}.`);
+    }
+  } else {
+    parts.push("No contestants are loaded yet.");
+  }
+
+  if (match.active_modifier && match.active_modifier !== "none") {
+    parts.push(`${match.active_modifier.replace(/-/g, " ")} is active, so the next clean move matters more than raw speed.`);
+  }
+
+  if (topVote) {
+    parts.push(
+      `The audience is pushing ${topVote[0].replace(/-/g, " ")} with ${topVote[1]} vote${topVote[1] === 1 ? "" : "s"}.`,
+    );
+  } else {
+    parts.push("The audience vote is still wide open.");
+  }
+
+  return parts.join(" ");
+}
 
 export async function POST(request: Request) {
   const supabase = getSupabaseServer();
 
   let matchId: string | undefined;
   try {
-    const body = await request.json();
+    const body = (await request.json()) as { matchId?: string };
     matchId = body.matchId;
   } catch {
-    // no body — find the active match
+    // Fall through to most recent active match.
   }
 
-  if (!matchId) {
+  let match: Match | null = null;
+
+  if (matchId) {
+    const { data } = await supabase.from("matches").select("*").eq("id", matchId).single();
+    match = (data as Match | null) ?? null;
+  } else {
     const { data } = await supabase
       .from("matches")
-      .select("id")
+      .select("*")
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(1);
-    matchId = data?.[0]?.id;
+    match = (data?.[0] as Match | undefined) ?? null;
   }
 
-  if (!matchId) {
+  if (!match) {
     return NextResponse.json({ error: "No active match found" }, { status: 404 });
   }
 
-  const { data: players } = await supabase
-    .from("players")
-    .select("*")
-    .eq("match_id", matchId);
+  const [playersRes, votesRes] = await Promise.all([
+    supabase.from("players").select("*").eq("match_id", match.id),
+    supabase.from("votes").select("*").eq("match_id", match.id),
+  ]);
 
-  const context = (players as Player[] | null)
-    ?.map((p) => `Slot ${p.slot}: ${p.name} (${p.language ?? "unknown"}) — score ${p.score}`)
-    .join("; ") ?? "no players";
+  const players = (playersRes.data as Player[] | null) ?? [];
+  const votes = (votesRes.data as Vote[] | null) ?? [];
 
-  // TODO: Swap for LLM call when ANTHROPIC_API_KEY is set
-  void context;
-  const body = PLACEHOLDER_LINES[Math.floor(Math.random() * PLACEHOLDER_LINES.length)];
-
-  return NextResponse.json({ body });
+  return NextResponse.json({
+    body: buildCommentary(match, players, votes),
+    source: "live-match-state",
+  });
 }

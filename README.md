@@ -21,7 +21,7 @@ The **current MVP** messaging and UI center on:
 - Live coding battle rooms  
 - Real-time contestant code panels  
 - Audience voting during matches  
-- AI match explanation  
+- Match-aware live explanation  
 - Tournament and replay flow  
 
 **Explicitly not in this MVP pass:** hosted code execution, viewer auth, payments, or new persistence beyond what is already wired elsewhere in the repo.
@@ -53,10 +53,10 @@ images: [{ url: "/og.png", width: 1200, height: 630, alt: "Killswitch" }],
 | `/sim`           | **Protected** producer/dev vote simulator                              |
 | `/grid`          | Standalone 2×2 embed grid                                               |
 | `/arena`         | Stream-ready **Season Zero HUD** (beta panels—embed integrations roll out alongside launch brackets) |
-| `/apply`         | Competitor form (MVP UX only — client state, wire storage separately) |
-| `/api/commentary`| `POST` → returns a placeholder commentary line (swap for LLM later)     |
+| `/apply`         | Competitor form — validated server-side and persisted to `applications` |
+| `/api/commentary`| `POST` → match-aware live explainer built from current match state       |
 
-The contestant embed field is still called `replit_url` in the DB but holds **any** embed URL — StackBlitz, Playcode, Replit, etc. No viewer auth required.
+The contestant embed field is still called `replit_url` in the DB. Producer writes now allow only HTTPS editor embeds from Playcode, StackBlitz, Replit, or CodeSandbox; the live arena re-validates the URL before rendering an iframe.
 
 ---
 
@@ -74,7 +74,11 @@ cp .env.local.example .env.local
 #    Open your Supabase project → SQL Editor → paste & run:
 #    supabase/migrations/001_schema.sql
 #    supabase/migrations/002_applications.sql
-#    (001: matches/players/votes + Realtime; 002: applications intake, insert-only RLS)
+#    supabase/migrations/003_waitlist_subscribers.sql
+#
+#    Before public launch, review/apply the generated equivalents of:
+#    supabase/security_hardening.sql
+#    supabase/timer_upgrade.sql
 
 # 4. Dev
 npm run dev          # http://localhost:3000
@@ -108,14 +112,14 @@ npm run build
 
 Schema files: `supabase/migrations/001_schema.sql`, `002_applications.sql`.
 
-- `matches` — `status`, `round`, `best_of`, `timer`, `active_modifier`, `problem_*`
-- `players` — slot 1–4, `replit_url` (any embed URL), `language`, `score`
+- `matches` — `status`, `round`, `best_of`, `timer`, optional `timer_started_at`, `active_modifier`, `problem_*`
+- `players` — slot 1–4, legacy `replit_url` column (validated editor embed URL), `language`, `score`
 - `votes` — `command` (e.g. `darkmode`, `no-backspace`)
-- `applications` — competitor `/apply` submissions; **INSERT-only** for `anon` (no public `SELECT`; review in Supabase **Table Editor**)
+- `applications` — competitor `/apply` submissions; current app writes through the server-only service-role route
 
 `001` is the original sprint schema and contains intentionally permissive policies. **Do not treat those policies as production-safe.** The repo now includes `supabase/security_hardening.sql`, which reduces browser access to public reads plus valid vote inserts and moves producer mutations to the protected server API. The correct live Supabase project is not currently connected to this workspace, so that SQL is review-ready but has **not** been applied to production yet.
 
-`applications` keeps its insert-only public form model: visitors can submit but cannot read rows through the anon API.
+`applications` is now written through `/api/apply` with server-side validation and the service-role client. The hardening SQL removes public application writes entirely.
 
 ---
 
@@ -166,11 +170,15 @@ For the launch you read YT/Twitch chat yourself and operate `/admin/control` to 
 
 - **Producer route protection** — implemented with fail-closed HTTP Basic auth in `proxy.ts` for `/admin`, `/control`, `/sim`, and `/api/admin`.
 - **Producer writes** — routed through `POST /api/admin/mutate` using the server-only Supabase service role.
-- **Public database permissions** — reviewed least-privilege SQL is in `supabase/security_hardening.sql`; it still needs to be applied to the correct live Supabase project once that project is connected.
+- **Public database permissions** — reviewed least-privilege SQL is in `supabase/security_hardening.sql`; it still needs to be converted into a generated migration and applied to the correct live Supabase project once that project is connected.
+- **Countdown synchronization** — code supports a server-written `timer_started_at` anchor and remains backward-compatible before the column exists. `supabase/timer_upgrade.sql` still needs to be converted into a generated migration and applied to the live project for cross-client authoritative timing.
+- **Embed safety** — producer writes and arena rendering restrict editor iframes to an HTTPS allowlist.
+- **Competitor intake** — `/apply` persists only after server validation succeeds; the UI no longer fakes success.
+- **Live explainer** — commentary is generated deterministically from real match, score, modifier, and vote state instead of random canned lines.
 - **CI** — GitHub Actions runs clean install, lint, and production build on PRs and pushes to `main`.
 
 ## Not built yet
-- **Real LLM in `/api/commentary`** — placeholder lines today; swap in Anthropic when `ANTHROPIC_API_KEY` is set.
+- **Optional LLM commentary layer** — the current explainer is deterministic and match-aware; an LLM can be added later without being required for the show.
 - **Pro tier ($10/mo) weighted votes** — schema and Stripe integration still TODO.
-- **Synced countdown timer** — `matches.timer` exists but isn't authoritative across clients yet.
-- **`replit_url` → `embed_url` rename** — column name is legacy; the field already holds any embed URL.
+- **Live timer migration** — the code path is ready, but `timer_started_at` must still be added to the correct production Supabase project for authoritative cross-client timing.
+- **`replit_url` → `embed_url` rename** — the column name remains legacy even though stored values are now validated editor embed URLs.
