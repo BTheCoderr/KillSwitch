@@ -1,3 +1,8 @@
+-- Production status: APPLIED on 2026-09-30 to Supabase project lnywzxvdbcissygxxwun.
+-- Canonical migration: supabase/migrations/20260930183603_add_authoritative_timer_anchor.sql
+--
+-- This file remains as a readable review copy. Do not manually re-run it; use the tracked migration history instead.
+
 -- KILLSWITCH authoritative timer upgrade
 -- REVIEW + APPLY to the connected Supabase project before enabling the new timer flow.
 --
