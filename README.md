@@ -28,14 +28,9 @@ The **current MVP** messaging and UI center on:
 
 A real-time broadcast surface for OBS (plus optional Supabase-backed producer routes): 2×2 grid of live code editors, HUD with timer and modifiers, and producer tools for modifiers and votes. Built for the camera first.
 
-### Open Graph image (TODO)
+### Social preview
 
-There is **no** `public/` directory or share image in-repo yet, so `app/layout.tsx` does not define `openGraph.images`. For launch link previews, add e.g. `public/og.png` (recommended **1200×630**), then wire it in metadata:
-
-```ts
-// app/layout.tsx — openGraph / twitter
-images: [{ url: "/og.png", width: 1200, height: 630, alt: "Killswitch" }],
-```
+Killswitch now ships a dynamic 1200×630 launch card through `app/opengraph-image.tsx` and reuses it for Twitter/X metadata. No static image file is required.
 
 **Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 · Supabase (Postgres + Realtime) · Framer Motion · Lucide.
 
@@ -49,12 +44,14 @@ images: [{ url: "/og.png", width: 1200, height: 630, alt: "Killswitch" }],
 | `/live`          | **OBS Browser Source** — full ArenaGrid (2×2 iframes + HUD + glitch)    |
 | `/overlay`       | Lighter transparent overlay layout for OBS                              |
 | `/admin/control` | **Protected producer panel** — modifiers, votes, scores, match control  |
+| `/admin/readiness` | **Protected launch gate** — deployment/database readiness checks      |
 | `/control`       | **Protected** alternate match-control UI                                |
 | `/sim`           | **Protected** producer/dev vote simulator                              |
 | `/grid`          | Standalone 2×2 embed grid                                               |
 | `/arena`         | Stream-ready **Season Zero HUD** (beta panels—embed integrations roll out alongside launch brackets) |
 | `/apply`         | Competitor form — validated server-side and persisted to `applications` |
 | `/api/commentary`| `POST` → match-aware live explainer built from current match state       |
+| `/api/health`    | Readiness JSON for deployment/database producer configuration             |
 
 The contestant embed field is still called `replit_url` in the DB. Producer writes now allow only HTTPS editor embeds from Playcode, StackBlitz, Replit, or CodeSandbox; the live arena re-validates the URL before rendering an iframe.
 
@@ -68,7 +65,7 @@ npm install
 
 # 2. Configure env
 cp .env.local.example .env.local
-# then fill in NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+# then fill in Supabase + producer values and NEXT_PUBLIC_SITE_URL
 
 # 3. Provision Supabase
 #    Open your Supabase project → SQL Editor → paste & run:
@@ -80,10 +77,13 @@ cp .env.local.example .env.local
 #    supabase/security_hardening.sql
 #    supabase/timer_upgrade.sql
 
-# 4. Dev
+# 4. Optional: seed one rehearsal match after the database is ready
+npm run seed:season-zero
+
+# 5. Dev
 npm run dev          # http://localhost:3000
 
-# 5. Verify
+# 6. Verify
 npm run lint
 npm run build
 ```
@@ -96,6 +96,7 @@ npm run build
 | -------------------------------- | --------- | -------- | ---------------------------------------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`       | client    | yes      | Supabase project URL                                       |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`  | client    | yes      | Supabase anon/public key                                   |
+| `NEXT_PUBLIC_SITE_URL`            | metadata  | prod     | Canonical production origin / share-card base URL          |
 | `ANTHROPIC_API_KEY`              | server    | no       | Future — for real LLM in `/api/commentary`                 |
 | `TWITCH_BOT_USERNAME`            | bot       | no       | `scripts/twitch-bot/` only                                 |
 | `TWITCH_OAUTH_TOKEN`             | bot       | no       | `scripts/twitch-bot/` only                                 |
@@ -160,9 +161,17 @@ After the first deploy, every push to your default branch ships to production.
 
 ---
 
+## Season Zero rehearsal
+
+The complete operator checklist lives in [`docs/SEASON_ZERO_RUNBOOK.md`](docs/SEASON_ZERO_RUNBOOK.md).
+
+After the production database is hardened, run `npm run seed:season-zero` to create one safe lobby match with four placeholder contestants. Use `/admin/readiness` as the deployment gate, `/admin/control` as the control room, and `/live` as the OBS Browser Source.
+
+---
+
 ## Production day flow (ghost chat)
 
-For the launch you read YT/Twitch chat yourself and operate `/admin/control` to fire modifiers and inject votes. After launch, `scripts/twitch-bot/` (tmi.js) can be wired to `INSERT` into `votes` directly from real chat once Twitch env vars are set.
+For the launch you read YT/Twitch chat yourself and operate `/admin/control` to fire modifiers and inject votes. After launch, `scripts/twitch-bot/` (tmi.js) can insert public votes from real chat once Twitch env vars are set. Run it from the repository root with `npm run twitch:bot`. The bot uses `TWITCH_OAUTH_TOKEN` and the public Supabase anon key only—never the service-role key.
 
 ---
 
@@ -175,6 +184,7 @@ For the launch you read YT/Twitch chat yourself and operate `/admin/control` to 
 - **Embed safety** — producer writes and arena rendering restrict editor iframes to an HTTPS allowlist.
 - **Competitor intake** — `/apply` persists only after server validation succeeds; the UI no longer fakes success.
 - **Live explainer** — commentary is generated deterministically from real match, score, modifier, and vote state instead of random canned lines.
+- **Launch tooling** — `/api/health`, protected `/admin/readiness`, the Season Zero seed command, dynamic social card, and an operator dress-rehearsal runbook are included.
 - **CI** — GitHub Actions runs clean install, lint, and production build on PRs and pushes to `main`.
 
 ## Not built yet
