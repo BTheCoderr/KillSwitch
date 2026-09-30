@@ -24,24 +24,10 @@ export function CountdownTimer({
   className,
 }: CountdownTimerProps) {
   const [now, setNow] = useState(() => Date.now());
-  const [localStartedAt, setLocalStartedAt] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!running) {
-      setLocalStartedAt(null);
-      return;
-    }
-
-    if (!startedAt) {
-      setLocalStartedAt(Date.now());
-    } else {
-      setLocalStartedAt(null);
-    }
-  }, [running, startedAt, seconds]);
+  const [localStartedAt] = useState(() => Date.now());
 
   useEffect(() => {
     if (!running) return;
-    setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), 250);
     return () => window.clearInterval(id);
   }, [running]);
@@ -50,7 +36,7 @@ export function CountdownTimer({
     if (startedAt) {
       return getRemainingSeconds(seconds, startedAt, running, now);
     }
-    if (running && localStartedAt !== null) {
+    if (running) {
       const elapsed = Math.max(0, Math.floor((now - localStartedAt) / 1000));
       return Math.max(0, seconds - elapsed);
     }
