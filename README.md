@@ -6,6 +6,27 @@
 **What it demonstrates:** Next.js 16 · React 19 · TypeScript · Tailwind v4 · Supabase Realtime · broadcast/product UX.
 <!-- repo-intro:end -->
 
+<!-- portfolio-refresh:start -->
+## Product at a glance
+
+| Area | Current build |
+| --- | --- |
+| Show format | Four-person livestream coding battle |
+| Broadcast | OBS-ready arena, transparent overlay, Season Zero HUD |
+| Audience | Live votes + chaos modifiers |
+| Producer | Protected control room, simulator, readiness gate |
+| State | Supabase Postgres + Realtime |
+| Security | Server-only producer mutations, Basic-auth protected admin surfaces, embed allowlist |
+| Timing | Server-anchored countdown support for synchronized clients |
+| Intake | Real validated competitor applications persisted server-side |
+
+### Why this is more than a landing page
+
+Killswitch treats the **broadcast itself as the product UI**. The public arena, producer controls, match state, votes, timer, commentary, contestant embeds, and OBS workflow are designed together rather than bolting streaming onto a normal web dashboard later.
+
+The current explainer is deterministic and match-aware; an optional LLM commentary layer can be added later without making the live show dependent on an AI provider.
+<!-- portfolio-refresh:end -->
+
 > Code Under Pressure. A live competitive coding show — 4 contestants, one problem, audience-controlled chaos.
 
 Public pages ship a **front-end MVP**: OBS/stream-first arena UI—not a hosted code execution engine yet. Contestants use embeddable editors; Killswitch owns the broadcast shell.
