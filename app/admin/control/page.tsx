@@ -64,6 +64,17 @@ export default function AdminControl() {
     return counts;
   }, [votes]);
 
+  async function adminMutation<T = unknown>(payload: Record<string, unknown>) {
+    const res = await fetch("/api/admin/mutate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const json = (await res.json()) as { data?: T; error?: string };
+    if (!res.ok) throw new Error(json.error ?? "Producer action failed");
+    return json.data as T;
+  }
+
   /* ── Init: load matches ── */
   useEffect(() => {
     let cancelled = false;
@@ -141,48 +152,53 @@ export default function AdminControl() {
   /* ── Actions ── */
   async function createMatch() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("matches")
-      .insert({ status: "lobby" })
-      .select()
-      .single();
-    setLoading(false);
-    if (error) {
-      addLog(`Create failed: ${error.message}`, "error");
-      return;
+    try {
+      const m = await adminMutation<Match>({ action: "createMatch" });
+      setMatches((prev) => [m, ...prev]);
+      setActiveId(m.id);
+      addLog(`Match created: ${m.id.slice(0, 8)}`);
+    } catch (error) {
+      addLog(`Create failed: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
+    } finally {
+      setLoading(false);
     }
-    const m = data as Match;
-    setMatches((prev) => [m, ...prev]);
-    setActiveId(m.id);
-    addLog(`Match created: ${m.id.slice(0, 8)}`);
   }
 
   async function triggerModifier(modId: string) {
     if (!activeId) return;
     setLoading(true);
-    addLog(`Executing DB mutation → ${modId}...`, "modifier");
-    const { error } = await supabase
-      .from("matches")
-      .update({ active_modifier: modId })
-      .eq("id", activeId);
-    setLoading(false);
-    if (error) {
-      addLog(`Trigger failed: ${error.message}`, "error");
+    addLog(`Executing producer mutation → ${modId}...`, "modifier");
+    try {
+      await adminMutation({
+        action: "updateMatch",
+        matchId: activeId,
+        fields: { active_modifier: modId },
+      });
+    } catch (error) {
+      addLog(`Trigger failed: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
+    } finally {
+      setLoading(false);
     }
   }
 
   async function updateMatch(fields: Partial<Match>) {
     if (!activeId) return;
-    const { error } = await supabase.from("matches").update(fields).eq("id", activeId);
-    if (error) addLog(`Update failed: ${error.message}`, "error");
+    try {
+      await adminMutation({ action: "updateMatch", matchId: activeId, fields });
+    } catch (error) {
+      addLog(`Update failed: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
+    }
   }
 
   async function updateScore(playerId: string, playerName: string, delta: number) {
     const p = players.find((pl) => pl.id === playerId);
     if (!p) return;
-    const newScore = Math.max(0, p.score + delta);
-    await supabase.from("players").update({ score: newScore }).eq("id", p.id);
-    addLog(`${playerName} score → ${newScore}`, "score");
+    try {
+      const updated = await adminMutation<Player>({ action: "updateScore", playerId, delta });
+      addLog(`${playerName} score → ${updated.score}`, "score");
+    } catch (error) {
+      addLog(`Score update failed: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
+    }
   }
 
   async function generateCommentary() {
@@ -217,7 +233,7 @@ export default function AdminControl() {
             KILLSWITCH CONTROL
           </h1>
           <p className="mt-1 text-xs text-slate-500">
-            Producer dashboard — hidden route, not indexed
+            Producer dashboard — authenticated, server-authorized controls
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -441,8 +457,17 @@ export default function AdminControl() {
                     type="button"
                     onClick={async () => {
                       if (!activeId) return;
-                      await supabase.from("votes").insert({ match_id: activeId, command: mod.id });
-                      addLog(`Manual vote: !${mod.id}`, "vote");
+                      try {
+                        await adminMutation({
+                          action: "castVotes",
+                          matchId: activeId,
+                          command: mod.id,
+                          times: 1,
+                        });
+                        addLog(`Manual vote: !${mod.id}`, "vote");
+                      } catch (error) {
+                        addLog(`Vote failed: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
+                      }
                     }}
                     className="rounded border border-[#2979FF]/30 bg-[#2979FF]/10 px-3 py-2 text-xs font-bold text-[#2979FF] transition hover:bg-[#2979FF]/20"
                   >
@@ -455,12 +480,17 @@ export default function AdminControl() {
                     if (!activeId) return;
                     const mods = MODIFIERS.filter((m) => m.id !== "none");
                     const random = mods[Math.floor(Math.random() * mods.length)];
-                    const rows = Array.from({ length: 10 }, () => ({
-                      match_id: activeId,
-                      command: random.id,
-                    }));
-                    await supabase.from("votes").insert(rows);
-                    addLog(`Spam 10x: !${random.id}`, "vote");
+                    try {
+                      await adminMutation({
+                        action: "castVotes",
+                        matchId: activeId,
+                        command: random.id,
+                        times: 10,
+                      });
+                      addLog(`Spam 10x: !${random.id}`, "vote");
+                    } catch (error) {
+                      addLog(`Vote burst failed: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
+                    }
                   }}
                   className="rounded border border-[#8A2BE2]/30 bg-[#8A2BE2]/10 px-3 py-2 text-xs font-bold text-[#8A2BE2] transition hover:bg-[#8A2BE2]/20"
                 >

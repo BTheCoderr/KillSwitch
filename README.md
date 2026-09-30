@@ -48,9 +48,9 @@ images: [{ url: "/og.png", width: 1200, height: 630, alt: "Killswitch" }],
 | `/`              | Marketing landing                                                       |
 | `/live`          | **OBS Browser Source** — full ArenaGrid (2×2 iframes + HUD + glitch)    |
 | `/overlay`       | Lighter transparent overlay layout for OBS                              |
-| `/admin/control` | Producer panel — fires modifiers, simulates votes, match/player view    |
-| `/control`       | Alternate match-control UI                                              |
-| `/sim`           | Local vote simulator                                                    |
+| `/admin/control` | **Protected producer panel** — modifiers, votes, scores, match control  |
+| `/control`       | **Protected** alternate match-control UI                                |
+| `/sim`           | **Protected** producer/dev vote simulator                              |
 | `/grid`          | Standalone 2×2 embed grid                                               |
 | `/arena`         | Stream-ready **Season Zero HUD** (beta panels—embed integrations roll out alongside launch brackets) |
 | `/apply`         | Competitor form (MVP UX only — client state, wire storage separately) |
@@ -96,7 +96,11 @@ npm run build
 | `TWITCH_BOT_USERNAME`            | bot       | no       | `scripts/twitch-bot/` only                                 |
 | `TWITCH_OAUTH_TOKEN`             | bot       | no       | `scripts/twitch-bot/` only                                 |
 | `TWITCH_CHANNEL`                 | bot       | no       | `scripts/twitch-bot/` only                                 |
-| `SUPABASE_SERVICE_ROLE_KEY`      | bot       | no       | Server-side only — never expose to the client              |
+| `SUPABASE_SERVICE_ROLE_KEY`      | server    | yes*     | Producer mutations; server-only, never expose to client    |
+| `KILLSWITCH_ADMIN_USER`          | server    | yes*     | HTTP Basic username for producer-only surfaces              |
+| `KILLSWITCH_ADMIN_PASSWORD`      | server    | yes*     | Long random password for producer-only surfaces             |
+
+`*` Required when running producer controls. Public marketing/broadcast pages can still build without using producer actions.
 
 ---
 
@@ -109,7 +113,9 @@ Schema files: `supabase/migrations/001_schema.sql`, `002_applications.sql`.
 - `votes` — `command` (e.g. `darkmode`, `no-backspace`)
 - `applications` — competitor `/apply` submissions; **INSERT-only** for `anon` (no public `SELECT`; review in Supabase **Table Editor**)
 
-`001` enables Realtime on matches/players/votes and uses permissive RLS for the broadcast MVP. **`applications`** uses stricter RLS: anyone can insert, nobody can read via the anon API. Tighten further before going wide.
+`001` is the original sprint schema and contains intentionally permissive policies. **Do not treat those policies as production-safe.** The repo now includes `supabase/security_hardening.sql`, which reduces browser access to public reads plus valid vote inserts and moves producer mutations to the protected server API. The correct live Supabase project is not currently connected to this workspace, so that SQL is review-ready but has **not** been applied to production yet.
+
+`applications` keeps its insert-only public form model: visitors can submit but cannot read rows through the anon API.
 
 ---
 
@@ -117,7 +123,8 @@ Schema files: `supabase/migrations/001_schema.sql`, `002_applications.sql`.
 
 1. **Browser Source** → URL: `https://<your-domain>/live` → 1920×1080.
 2. (Optional) Add a second Browser Source on `https://<your-domain>/overlay` for a transparent HUD layered over a different layout.
-3. Open `https://<your-domain>/admin/control` on a separate machine/window — that's where you fire modifiers and inject votes during the stream.
+3. Set `KILLSWITCH_ADMIN_USER`, `KILLSWITCH_ADMIN_PASSWORD`, and `SUPABASE_SERVICE_ROLE_KEY` on the server.
+4. Open `https://<your-domain>/admin/control` on a separate machine/window and authenticate — that's where you fire modifiers and inject votes during the stream.
 
 The `.glitch-active` / `.glitch-overlay` / `.glitch-alert` / `.scanlines` styles in `app/globals.css` are triggered by `matches.active_modifier` updating via Realtime.
 
@@ -155,9 +162,14 @@ For the launch you read YT/Twitch chat yourself and operate `/admin/control` to 
 
 ---
 
-## Not built yet
+## Production hardening status
 
-- **Auth on `/admin/control`** — currently open. Lock down before going public.
+- **Producer route protection** — implemented with fail-closed HTTP Basic auth in `proxy.ts` for `/admin`, `/control`, `/sim`, and `/api/admin`.
+- **Producer writes** — routed through `POST /api/admin/mutate` using the server-only Supabase service role.
+- **Public database permissions** — reviewed least-privilege SQL is in `supabase/security_hardening.sql`; it still needs to be applied to the correct live Supabase project once that project is connected.
+- **CI** — GitHub Actions runs clean install, lint, and production build on PRs and pushes to `main`.
+
+## Not built yet
 - **Real LLM in `/api/commentary`** — placeholder lines today; swap in Anthropic when `ANTHROPIC_API_KEY` is set.
 - **Pro tier ($10/mo) weighted votes** — schema and Stripe integration still TODO.
 - **Synced countdown timer** — `matches.timer` exists but isn't authoritative across clients yet.

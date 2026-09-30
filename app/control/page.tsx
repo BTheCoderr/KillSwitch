@@ -29,6 +29,17 @@ export default function ControlPage() {
   }, [votes]);
   const totalVotes = votes.length;
 
+  async function adminMutation<T = unknown>(payload: Record<string, unknown>) {
+    const res = await fetch("/api/admin/mutate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const json = (await res.json()) as { data?: T; error?: string };
+    if (!res.ok) throw new Error(json.error ?? "Producer action failed");
+    return json.data as T;
+  }
+
   useEffect(() => {
     let cancelled = false;
     async function init() {
@@ -90,47 +101,61 @@ export default function ControlPage() {
   }, [activeId, supabase, loadMatchData]);
 
   async function createMatch() {
-    const { data } = await supabase
-      .from("matches")
-      .insert({ status: "lobby" })
-      .select()
-      .single();
-    if (!data) return;
-    const m = data as Match;
-    setMatches((prev) => [m, ...prev]);
-    setActiveId(m.id);
+    try {
+      const m = await adminMutation<Match>({ action: "createMatch" });
+      setMatches((prev) => [m, ...prev]);
+      setActiveId(m.id);
+    } catch (error) {
+      console.error("Create match failed", error);
+    }
   }
 
   async function updateMatch(fields: Partial<Match>) {
     if (!activeId) return;
-    await supabase.from("matches").update(fields).eq("id", activeId);
+    try {
+      await adminMutation({ action: "updateMatch", matchId: activeId, fields });
+    } catch (error) {
+      console.error("Update match failed", error);
+    }
   }
 
   async function upsertPlayer(slot: number, field: string, value: string | number) {
     if (!activeId) return;
-    const existing = players.find((p) => p.slot === slot);
-    if (existing) {
-      await supabase.from("players").update({ [field]: value }).eq("id", existing.id);
-    } else {
-      await supabase.from("players").insert({
-        match_id: activeId,
+    try {
+      await adminMutation({
+        action: "upsertPlayer",
+        matchId: activeId,
         slot,
-        name: field === "name" ? (value as string) : `Player ${slot}`,
-        ...(field !== "name" ? { [field]: value } : {}),
+        field,
+        value,
       });
+      await loadMatchData(activeId);
+    } catch (error) {
+      console.error("Player update failed", error);
     }
-    loadMatchData(activeId);
   }
 
   async function updateScore(slot: number, delta: number) {
     const p = players.find((pl) => pl.slot === slot);
     if (!p) return;
-    await supabase.from("players").update({ score: Math.max(0, p.score + delta) }).eq("id", p.id);
+    try {
+      await adminMutation({ action: "updateScore", playerId: p.id, delta });
+    } catch (error) {
+      console.error("Score update failed", error);
+    }
   }
 
   async function fireModifier(modType: string) {
     if (!activeId) return;
-    await supabase.from("matches").update({ active_modifier: modType }).eq("id", activeId);
+    try {
+      await adminMutation({
+        action: "updateMatch",
+        matchId: activeId,
+        fields: { active_modifier: modType },
+      });
+    } catch (error) {
+      console.error("Modifier update failed", error);
+    }
   }
 
   async function generateCommentary() {

@@ -1,0 +1,41 @@
+name: Validate Killswitch
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-key
+          SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role
+          KILLSWITCH_ADMIN_USER: ci-producer
+          KILLSWITCH_ADMIN_PASSWORD: ci-only-not-a-real-secret
+        run: npm run build
+
+      - name: Verify producer security files
+        run: |
+          test -s proxy.ts
+          test -s app/api/admin/mutate/route.ts
+          test -s supabase/security_hardening.sql
