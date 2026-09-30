@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { allowedEmbedHosts, normalizeEmbedUrl } from "@/lib/embed";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { getRemainingSeconds } from "@/lib/timer";
 import { MODIFIER_OPTIONS } from "@/lib/types";
 
 const MODIFIERS = new Set(["none", ...MODIFIER_OPTIONS.map((item) => item.id)]);
@@ -109,6 +111,95 @@ export async function POST(request: Request) {
     return NextResponse.json({ data });
   }
 
+  if (action === "startTimer") {
+    if (!uuidLike(body.matchId)) {
+      return NextResponse.json({ error: "Invalid match ID" }, { status: 400 });
+    }
+    const seconds = clampInt(body.seconds ?? 600, 1, 60 * 60) ?? 600;
+    const { data, error } = await supabase
+      .from("matches")
+      .update({
+        status: "active",
+        timer: seconds,
+        timer_started_at: new Date().toISOString(),
+      })
+      .eq("id", body.matchId)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ data });
+  }
+
+  if (action === "pauseTimer") {
+    if (!uuidLike(body.matchId)) {
+      return NextResponse.json({ error: "Invalid match ID" }, { status: 400 });
+    }
+
+    const { data: match, error: loadError } = await supabase
+      .from("matches")
+      .select("id, status, timer, timer_started_at")
+      .eq("id", body.matchId)
+      .single();
+
+    if (loadError || !match) {
+      return NextResponse.json({ error: loadError?.message ?? "Match not found" }, { status: 404 });
+    }
+
+    const remaining = getRemainingSeconds(
+      Number(match.timer ?? 0),
+      match.timer_started_at,
+      match.status === "active",
+    );
+
+    const { data, error } = await supabase
+      .from("matches")
+      .update({
+        status: "lobby",
+        timer: remaining,
+        timer_started_at: null,
+      })
+      .eq("id", body.matchId)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ data });
+  }
+
+  if (action === "advanceRound") {
+    if (!uuidLike(body.matchId)) {
+      return NextResponse.json({ error: "Invalid match ID" }, { status: 400 });
+    }
+
+    const { data: match, error: loadError } = await supabase
+      .from("matches")
+      .select("round")
+      .eq("id", body.matchId)
+      .single();
+
+    if (loadError || !match) {
+      return NextResponse.json({ error: loadError?.message ?? "Match not found" }, { status: 404 });
+    }
+
+    const seconds = clampInt(body.seconds ?? 600, 1, 60 * 60) ?? 600;
+    const { data, error } = await supabase
+      .from("matches")
+      .update({
+        round: Math.max(1, Number(match.round ?? 1) + 1),
+        status: "lobby",
+        timer: seconds,
+        timer_started_at: null,
+        active_modifier: "none",
+      })
+      .eq("id", body.matchId)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ data });
+  }
+
   if (action === "updateScore") {
     if (!uuidLike(body.playerId)) {
       return NextResponse.json({ error: "Invalid player ID" }, { status: 400 });
@@ -151,9 +242,19 @@ export async function POST(request: Request) {
     }
 
     const rawValue = body.value;
-    const value = typeof rawValue === "string" ? rawValue.trim().slice(0, 500) : "";
-    if (field === "replit_url" && value && !/^https?:\/\//i.test(value)) {
-      return NextResponse.json({ error: "Embed URL must start with http:// or https://" }, { status: 400 });
+    let value = typeof rawValue === "string" ? rawValue.trim().slice(0, 500) : "";
+
+    if (field === "replit_url" && value) {
+      const normalized = normalizeEmbedUrl(value);
+      if (!normalized) {
+        return NextResponse.json(
+          {
+            error: `Unsupported embed host. Use HTTPS from: ${allowedEmbedHosts().join(", ")}`,
+          },
+          { status: 400 },
+        );
+      }
+      value = normalized;
     }
 
     const { data: existing, error: existingError } = await supabase
