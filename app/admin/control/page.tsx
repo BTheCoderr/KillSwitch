@@ -237,7 +237,7 @@ export default function AdminControl() {
         // A final status update below still ends the match even if pausing failed.
       }
     }
-    await updateMatch({ status: "finished", timer_started_at: null });
+    await updateMatch({ status: "finished" });
   }
 
   async function updateScore(playerId: string, playerName: string, delta: number) {
