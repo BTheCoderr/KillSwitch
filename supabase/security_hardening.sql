@@ -9,17 +9,21 @@
 --   * audience: read match/player/vote state
 --   * audience: insert valid votes only
 --   * producer: mutate matches/players through server-side service-role API
---   * nobody public: insert/update/delete matches or players
+--   * applications/waitlist: write through server-side service-role APIs only
+--   * nobody public: insert/update/delete matches, players, applications, or waitlist rows
 
 begin;
 
 alter table public.matches enable row level security;
 alter table public.players enable row level security;
 alter table public.votes enable row level security;
+alter table public.applications enable row level security;
+alter table public.waitlist_subscribers enable row level security;
 
 drop policy if exists "allow all on matches" on public.matches;
 drop policy if exists "allow all on players" on public.players;
 drop policy if exists "allow all on votes" on public.votes;
+drop policy if exists "anon insert applications" on public.applications;
 
 drop policy if exists "public read matches" on public.matches;
 drop policy if exists "public read players" on public.players;
@@ -29,6 +33,8 @@ drop policy if exists "public cast valid votes" on public.votes;
 revoke all on table public.matches from anon, authenticated;
 revoke all on table public.players from anon, authenticated;
 revoke all on table public.votes from anon, authenticated;
+revoke all on table public.applications from anon, authenticated;
+revoke all on table public.waitlist_subscribers from anon, authenticated;
 
 grant select on table public.matches to anon, authenticated;
 grant select on table public.players to anon, authenticated;
