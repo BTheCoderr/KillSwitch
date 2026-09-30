@@ -190,6 +190,56 @@ export default function AdminControl() {
     }
   }
 
+  async function startTimer(seconds: number) {
+    if (!activeId) return;
+    try {
+      await adminMutation({ action: "startTimer", matchId: activeId, seconds });
+      addLog(`Timer started: ${Math.ceil(seconds / 60)}m`, "info");
+    } catch (error) {
+      addLog(`Timer start failed: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
+    }
+  }
+
+  async function pauseTimer() {
+    if (!activeId) return;
+    try {
+      await adminMutation({ action: "pauseTimer", matchId: activeId });
+      addLog("Timer paused", "info");
+    } catch (error) {
+      addLog(`Timer pause failed: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
+    }
+  }
+
+  async function advanceRound() {
+    if (!activeId) return;
+    try {
+      await adminMutation({ action: "advanceRound", matchId: activeId, seconds: 600 });
+      addLog("Advanced to next round", "info");
+    } catch (error) {
+      addLog(`Advance failed: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
+    }
+  }
+
+  async function setMatchStatus(status: Match["status"]) {
+    if (!activeId || !match) return;
+    if (status === "active") {
+      await startTimer(match.timer || 600);
+      return;
+    }
+    if (status === "lobby") {
+      await pauseTimer();
+      return;
+    }
+    if (match.status === "active") {
+      try {
+        await adminMutation({ action: "pauseTimer", matchId: activeId });
+      } catch {
+        // A final status update below still ends the match even if pausing failed.
+      }
+    }
+    await updateMatch({ status: "finished", timer_started_at: null });
+  }
+
   async function updateScore(playerId: string, playerName: string, delta: number) {
     const p = players.find((pl) => pl.id === playerId);
     if (!p) return;
@@ -204,7 +254,7 @@ export default function AdminControl() {
   async function generateCommentary() {
     if (!activeId) return;
     setLoading(true);
-    addLog("Calling AI commentary endpoint...", "info");
+    addLog("Generating match-aware commentary...", "info");
     try {
       const res = await fetch("/api/commentary", {
         method: "POST",
@@ -213,7 +263,7 @@ export default function AdminControl() {
       });
       if (res.ok) {
         const data = await res.json();
-        addLog(`AI: "${data.body}"`, "info");
+        addLog(`Explainer: "${data.body}"`, "info");
       } else {
         addLog("Commentary endpoint returned error", "error");
       }
@@ -313,7 +363,7 @@ export default function AdminControl() {
                   <button
                     key={s}
                     type="button"
-                    onClick={() => updateMatch({ status: s })}
+                    onClick={() => void setMatchStatus(s)}
                     className={`rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition ${
                       match.status === s
                         ? "bg-[#39FF14]/20 text-[#39FF14] ring-1 ring-[#39FF14]/40"
@@ -326,7 +376,7 @@ export default function AdminControl() {
                 <div className="ml-auto flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() => updateMatch({ timer: 600, status: "active" })}
+                    onClick={() => void startTimer(600)}
                     className="rounded bg-slate-800 p-1.5 text-slate-400 hover:text-[#39FF14]"
                     title="Start 10m timer"
                   >
@@ -334,7 +384,7 @@ export default function AdminControl() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => updateMatch({ status: "lobby" })}
+                    onClick={() => void pauseTimer()}
                     className="rounded bg-slate-800 p-1.5 text-slate-400 hover:text-amber-300"
                     title="Pause"
                   >
@@ -342,7 +392,7 @@ export default function AdminControl() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => updateMatch({ round: match.round + 1 })}
+                    onClick={() => void advanceRound()}
                     className="rounded bg-slate-800 p-1.5 text-slate-400 hover:text-[#8A2BE2]"
                     title="Next round"
                   >
@@ -532,11 +582,11 @@ export default function AdminControl() {
             </section>
           )}
 
-          {/* ── AI Commentary ── */}
+          {/* ── Live Explainer ── */}
           <section className="rounded-lg border border-slate-800 bg-slate-950 p-5">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#2979FF]">
-                <Brain className="size-3.5" /> AI Commentary
+                <Brain className="size-3.5" /> Live Explainer
               </h2>
               <button
                 type="button"
