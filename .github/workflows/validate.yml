@@ -43,3 +43,8 @@ jobs:
           test -s lib/timer.ts
           test -s supabase/security_hardening.sql
           test -s supabase/timer_upgrade.sql
+          test -s app/api/health/route.ts
+          test -s app/admin/readiness/page.tsx
+          test -s app/opengraph-image.tsx
+          test -s scripts/seed-season-zero.mjs
+          test -s docs/SEASON_ZERO_RUNBOOK.md
