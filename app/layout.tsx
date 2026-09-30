@@ -28,7 +28,7 @@ const geistMono = Geist_Mono({
 });
 
 const description =
-  "Live competitive coding battles—developing a livestream-ready MVP with live coding battle rooms. OBS-first arenas, votes, AI narration, tournaments & replays—not a hosted runner yet.";
+  "Live competitive coding battles with OBS-first arenas, audience modifiers, synchronized producer controls, match-aware live explanation, tournaments, and replays.";
 
 const ogTitle = "Killswitch — Livestream-ready live coding MVP";
 
