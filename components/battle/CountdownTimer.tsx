@@ -1,9 +1,13 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+import { getRemainingSeconds } from "@/lib/timer";
 import { cn } from "@/lib/utils";
 
 type CountdownTimerProps = {
   seconds: number;
+  startedAt?: string | null;
+  running?: boolean;
   className?: string;
 };
 
@@ -13,8 +17,27 @@ function formatTime(totalSeconds: number) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export function CountdownTimer({ seconds, className }: CountdownTimerProps) {
-  const urgent = seconds <= 30;
+export function CountdownTimer({
+  seconds,
+  startedAt = null,
+  running = false,
+  className,
+}: CountdownTimerProps) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!running || !startedAt) return;
+    setNow(Date.now());
+    const id = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(id);
+  }, [running, startedAt]);
+
+  const remaining = useMemo(
+    () => getRemainingSeconds(seconds, startedAt, running, now),
+    [seconds, startedAt, running, now],
+  );
+
+  const urgent = remaining <= 30;
 
   return (
     <div
@@ -24,7 +47,7 @@ export function CountdownTimer({ seconds, className }: CountdownTimerProps) {
         className,
       )}
     >
-      {formatTime(seconds)}
+      {formatTime(remaining)}
     </div>
   );
 }
