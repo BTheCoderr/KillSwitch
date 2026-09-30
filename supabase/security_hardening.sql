@@ -1,3 +1,8 @@
+-- Production status: APPLIED on 2026-09-30 to Supabase project lnywzxvdbcissygxxwun.
+-- Canonical migration: supabase/migrations/20260930183600_harden_public_api_permissions.sql
+--
+-- This file remains as a readable review copy. Do not manually re-run it; use the tracked migration history instead.
+
 -- KILLSWITCH public API hardening
 -- REVIEW + APPLY to the connected Supabase project before public launch.
 --
