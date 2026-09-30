@@ -24,18 +24,38 @@ export function CountdownTimer({
   className,
 }: CountdownTimerProps) {
   const [now, setNow] = useState(() => Date.now());
+  const [localStartedAt, setLocalStartedAt] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!running || !startedAt) return;
+    if (!running) {
+      setLocalStartedAt(null);
+      return;
+    }
+
+    if (!startedAt) {
+      setLocalStartedAt(Date.now());
+    } else {
+      setLocalStartedAt(null);
+    }
+  }, [running, startedAt, seconds]);
+
+  useEffect(() => {
+    if (!running) return;
     setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), 250);
     return () => window.clearInterval(id);
-  }, [running, startedAt]);
+  }, [running]);
 
-  const remaining = useMemo(
-    () => getRemainingSeconds(seconds, startedAt, running, now),
-    [seconds, startedAt, running, now],
-  );
+  const remaining = useMemo(() => {
+    if (startedAt) {
+      return getRemainingSeconds(seconds, startedAt, running, now);
+    }
+    if (running && localStartedAt !== null) {
+      const elapsed = Math.max(0, Math.floor((now - localStartedAt) / 1000));
+      return Math.max(0, seconds - elapsed);
+    }
+    return Math.max(0, seconds);
+  }, [seconds, startedAt, running, now, localStartedAt]);
 
   const urgent = remaining <= 30;
 
