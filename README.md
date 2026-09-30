@@ -200,7 +200,7 @@ For the launch you read YT/Twitch chat yourself and operate `/admin/control` to 
 
 - **Producer route protection** — implemented with fail-closed HTTP Basic auth in `proxy.ts` for `/admin`, `/control`, `/sim`, and `/api/admin`.
 - **Producer writes** — routed through `POST /api/admin/mutate` using the server-only Supabase service role.
-- **Public database permissions** — reviewed least-privilege SQL is in `supabase/security_hardening.sql`; it still needs to be converted into a generated migration and applied to the correct live Supabase project once that project is connected.
+- **Public database permissions** — least-privilege hardening is applied to the connected production Supabase project and tracked in repository SQL/migration history.
 - **Countdown synchronization** — code supports a server-written `timer_started_at` anchor and remains backward-compatible before the column exists. `timer_started_at` is now live in production and tracked by `20260930183603_add_authoritative_timer_anchor.sql` for authoritative cross-client timing.
 - **Embed safety** — producer writes and arena rendering restrict editor iframes to an HTTPS allowlist.
 - **Competitor intake** — `/apply` persists only after server validation succeeds; the UI no longer fakes success.
@@ -211,5 +211,4 @@ For the launch you read YT/Twitch chat yourself and operate `/admin/control` to 
 ## Not built yet
 - **Optional LLM commentary layer** — the current explainer is deterministic and match-aware; an LLM can be added later without being required for the show.
 - **Pro tier ($10/mo) weighted votes** — schema and Stripe integration still TODO.
-- **Live timer migration** — the code path is ready, but `timer_started_at` must still be added to the correct production Supabase project for authoritative cross-client timing.
 - **`replit_url` → `embed_url` rename** — the column name remains legacy even though stored values are now validated editor embed URLs.
