@@ -1,24 +1,4 @@
--- Production status: APPLIED on 2026-09-30 to Supabase project lnywzxvdbcissygxxwun.
--- Canonical migration: supabase/migrations/20260930183600_harden_public_api_permissions.sql
---
--- This file remains as a readable review copy. Do not manually re-run it; use the tracked migration history instead.
-
--- KILLSWITCH public API hardening
--- REVIEW + APPLY to the connected Supabase project before public launch.
---
--- This is intentionally kept outside supabase/migrations until the correct live
--- Supabase project is connected. Once connected, generate the migration with the
--- Supabase CLI and copy this reviewed SQL into that generated migration.
---
--- Goal:
---   * audience: read match/player/vote state
---   * audience: insert valid votes only
---   * producer: mutate matches/players through server-side service-role API
---   * applications/waitlist: write through server-side service-role APIs only
---   * nobody public: insert/update/delete matches, players, applications, or waitlist rows
-
-begin;
-
+-- Applied to production Supabase project lnywzxvdbcissygxxwun on 2026-09-30.
 alter table public.matches enable row level security;
 alter table public.players enable row level security;
 alter table public.votes enable row level security;
@@ -47,27 +27,19 @@ grant select on table public.votes to anon, authenticated;
 grant insert on table public.votes to anon, authenticated;
 
 create policy "public read matches"
-  on public.matches
-  for select
-  to anon, authenticated
+  on public.matches for select to anon, authenticated
   using (true);
 
 create policy "public read players"
-  on public.players
-  for select
-  to anon, authenticated
+  on public.players for select to anon, authenticated
   using (true);
 
 create policy "public read votes"
-  on public.votes
-  for select
-  to anon, authenticated
+  on public.votes for select to anon, authenticated
   using (true);
 
 create policy "public cast valid votes"
-  on public.votes
-  for insert
-  to anon, authenticated
+  on public.votes for insert to anon, authenticated
   with check (
     command in (
       'reverse-iteration',
@@ -84,5 +56,3 @@ create policy "public cast valid votes"
         and m.status in ('lobby', 'active')
     )
   );
-
-commit;

@@ -118,7 +118,7 @@ Schema files: `supabase/migrations/001_schema.sql`, `002_applications.sql`.
 - `votes` — `command` (e.g. `darkmode`, `no-backspace`)
 - `applications` — competitor `/apply` submissions; current app writes through the server-only service-role route
 
-`001` is the original sprint schema and contains intentionally permissive policies. **Do not treat those policies as production-safe.** The repo now includes `supabase/security_hardening.sql`, which reduces browser access to public reads plus valid vote inserts and moves producer mutations to the protected server API. The correct live Supabase project is not currently connected to this workspace, so that SQL is review-ready but has **not** been applied to production yet.
+`001` is the original sprint schema and contains intentionally permissive policies. **Do not treat those policies as production-safe.** The repo now includes `supabase/security_hardening.sql`, which reduces browser access to public reads plus valid vote inserts and moves producer mutations to the protected server API. The correct live Supabase project is connected and the hardening migration has been applied to production.
 
 `applications` is now written through `/api/apply` with server-side validation and the service-role client. The hardening SQL removes public application writes entirely.
 
@@ -180,7 +180,7 @@ For the launch you read YT/Twitch chat yourself and operate `/admin/control` to 
 - **Producer route protection** — implemented with fail-closed HTTP Basic auth in `proxy.ts` for `/admin`, `/control`, `/sim`, and `/api/admin`.
 - **Producer writes** — routed through `POST /api/admin/mutate` using the server-only Supabase service role.
 - **Public database permissions** — reviewed least-privilege SQL is in `supabase/security_hardening.sql`; it still needs to be converted into a generated migration and applied to the correct live Supabase project once that project is connected.
-- **Countdown synchronization** — code supports a server-written `timer_started_at` anchor and remains backward-compatible before the column exists. `supabase/timer_upgrade.sql` still needs to be converted into a generated migration and applied to the live project for cross-client authoritative timing.
+- **Countdown synchronization** — code supports a server-written `timer_started_at` anchor and remains backward-compatible before the column exists. `timer_started_at` is now live in production and tracked by `20260930183603_add_authoritative_timer_anchor.sql` for authoritative cross-client timing.
 - **Embed safety** — producer writes and arena rendering restrict editor iframes to an HTTPS allowlist.
 - **Competitor intake** — `/apply` persists only after server validation succeeds; the UI no longer fakes success.
 - **Live explainer** — commentary is generated deterministically from real match, score, modifier, and vote state instead of random canned lines.
