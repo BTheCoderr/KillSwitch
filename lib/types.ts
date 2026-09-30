@@ -4,6 +4,7 @@ export type Match = {
   round: number;
   best_of: number;
   timer: number;
+  timer_started_at: string | null;
   active_modifier: string;
   problem_title: string | null;
   problem_difficulty: string | null;
