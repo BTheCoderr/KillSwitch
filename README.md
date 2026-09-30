@@ -1,5 +1,11 @@
 # Killswitch
 
+<!-- repo-intro:start -->
+**Project snapshot:** Killswitch is a livestream-first competitive coding show platform with four-person battle rooms, audience modifiers and voting, producer controls, and an OBS-ready arena interface.
+
+**What it demonstrates:** Next.js 16 · React 19 · TypeScript · Tailwind v4 · Supabase Realtime · broadcast/product UX.
+<!-- repo-intro:end -->
+
 > Code Under Pressure. A live competitive coding show — 4 contestants, one problem, audience-controlled chaos.
 
 Public pages ship a **front-end MVP**: OBS/stream-first arena UI—not a hosted code execution engine yet. Contestants use embeddable editors; Killswitch owns the broadcast shell.
