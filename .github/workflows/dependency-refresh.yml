@@ -1,4 +1,5 @@
 name: Refresh Dependency Lockfile
+# One-shot branch workflow; removed after the lockfile is patched.
 
 on:
   push:
