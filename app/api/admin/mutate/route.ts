@@ -18,6 +18,15 @@ function clampInt(value: unknown, min: number, max: number) {
   return Math.min(max, Math.max(min, Math.trunc(parsed)));
 }
 
+function missingTimerAnchor(error: { code?: string; message?: string } | null) {
+  if (!error) return false;
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    (error.message ?? "").includes("timer_started_at")
+  );
+}
+
 function sanitizeMatchFields(input: unknown) {
   if (!input || typeof input !== "object") return {};
   const source = input as Record<string, unknown>;
@@ -116,7 +125,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid match ID" }, { status: 400 });
     }
     const seconds = clampInt(body.seconds ?? 600, 1, 60 * 60) ?? 600;
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("matches")
       .update({
         status: "active",
@@ -126,6 +135,18 @@ export async function POST(request: Request) {
       .eq("id", body.matchId)
       .select()
       .single();
+
+    // Backward-compatible until timer_upgrade.sql is applied to the live project.
+    if (missingTimerAnchor(error)) {
+      const fallback = await supabase
+        .from("matches")
+        .update({ status: "active", timer: seconds })
+        .eq("id", body.matchId)
+        .select()
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ data });
@@ -138,7 +159,7 @@ export async function POST(request: Request) {
 
     const { data: match, error: loadError } = await supabase
       .from("matches")
-      .select("id, status, timer, timer_started_at")
+      .select("*")
       .eq("id", body.matchId)
       .single();
 
@@ -152,7 +173,7 @@ export async function POST(request: Request) {
       match.status === "active",
     );
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("matches")
       .update({
         status: "lobby",
@@ -162,6 +183,17 @@ export async function POST(request: Request) {
       .eq("id", body.matchId)
       .select()
       .single();
+
+    if (missingTimerAnchor(error)) {
+      const fallback = await supabase
+        .from("matches")
+        .update({ status: "lobby", timer: remaining })
+        .eq("id", body.matchId)
+        .select()
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ data });
@@ -183,10 +215,11 @@ export async function POST(request: Request) {
     }
 
     const seconds = clampInt(body.seconds ?? 600, 1, 60 * 60) ?? 600;
-    const { data, error } = await supabase
+    const round = Math.max(1, Number(match.round ?? 1) + 1);
+    let { data, error } = await supabase
       .from("matches")
       .update({
-        round: Math.max(1, Number(match.round ?? 1) + 1),
+        round,
         status: "lobby",
         timer: seconds,
         timer_started_at: null,
@@ -195,6 +228,22 @@ export async function POST(request: Request) {
       .eq("id", body.matchId)
       .select()
       .single();
+
+    if (missingTimerAnchor(error)) {
+      const fallback = await supabase
+        .from("matches")
+        .update({
+          round,
+          status: "lobby",
+          timer: seconds,
+          active_modifier: "none",
+        })
+        .eq("id", body.matchId)
+        .select()
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ data });
