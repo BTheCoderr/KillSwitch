@@ -89,14 +89,14 @@ cp .env.local.example .env.local
 # then fill in Supabase + producer values and NEXT_PUBLIC_SITE_URL
 
 # 3. Provision Supabase
-#    Open your Supabase project → SQL Editor → paste & run:
-#    supabase/migrations/001_schema.sql
-#    supabase/migrations/002_applications.sql
-#    supabase/migrations/003_waitlist_subscribers.sql
+#    For a brand-new local project, the original bootstrap SQL is archived under:
+#    supabase/legacy/001_schema.sql
+#    supabase/legacy/002_applications.sql
+#    supabase/legacy/003_waitlist_subscribers.sql
 #
-#    Production hardening and the authoritative timer migration are already
-#    applied to the canonical KillSwitch Supabase project. The exact live
-#    migration history is tracked under supabase/migrations/.
+#    Those legacy bootstraps are intentionally OUTSIDE the managed migration
+#    chain because production predates Supabase migration tracking for them.
+#    The exact tracked production history lives under supabase/migrations/.
 
 # 4. Optional: seed one rehearsal match after the database is ready
 npm run seed:season-zero
@@ -132,7 +132,7 @@ npm run build
 
 ## Supabase
 
-Schema files: `supabase/migrations/001_schema.sql`, `002_applications.sql`.
+Legacy bootstrap schema: `supabase/legacy/001_schema.sql`, `002_applications.sql`, and `003_waitlist_subscribers.sql`. Managed production migrations live only under `supabase/migrations/`.
 
 - `matches` — `status`, `round`, `best_of`, `timer`, optional `timer_started_at`, `active_modifier`, `problem_*`
 - `players` — slot 1–4, legacy `replit_url` column (validated editor embed URL), `language`, `score`
@@ -141,7 +141,7 @@ Schema files: `supabase/migrations/001_schema.sql`, `002_applications.sql`.
 - `waitlist_subscribers` — early-access intake; server-only service-role writes
 - `sponsor_leads` — sponsor deck requests; server-only service-role writes
 
-`001` is the original sprint schema and contains intentionally permissive policies. **Do not treat those policies as production-safe.** The repo's current migrations reduce browser database access to public reads only; vote inserts and all producer mutations go through the protected server API. The correct live Supabase project is connected and the hardening migration has been applied to production.
+`supabase/legacy/001_schema.sql` is the original sprint bootstrap and contains intentionally permissive policies. **Do not treat those policies as production-safe or replay it against production.** The managed migrations reduce browser database access to public reads only; vote inserts and all producer mutations go through the protected server API. The canonical production project is already hardened.
 
 `applications` is now written through `/api/apply` with server-side validation and the service-role client. The hardening SQL removes public application writes entirely.
 
@@ -211,7 +211,7 @@ For the first rehearsal, operate `/admin/control` to fire modifiers and inject v
 
 - **Producer route protection** — implemented with fail-closed HTTP Basic auth in `proxy.ts` for `/admin`, `/control`, `/sim`, and `/api/admin`.
 - **Producer writes** — routed through `POST /api/admin/mutate` using the server-only Supabase service role.
-- **Public database permissions** — repository migrations reduce browser access to read-only match state and remove anonymous vote inserts; production must apply the pending migrations before rehearsal.
+- **Public database permissions** — production is verified read-only for public match/vote state; anonymous/authenticated vote inserts are revoked and the atomic score RPC is service-role-only.
 - **Countdown synchronization** — code supports a server-written `timer_started_at` anchor and remains backward-compatible before the column exists. `timer_started_at` is now live in production and tracked by `20260930183603_add_authoritative_timer_anchor.sql` for authoritative cross-client timing.
 - **Embed safety** — producer writes and arena rendering restrict editor iframes to an HTTPS allowlist.
 - **Intake** — `/apply`, waitlist, and sponsor requests only show success after server-side persistence succeeds.
