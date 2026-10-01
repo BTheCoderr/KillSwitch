@@ -103,7 +103,7 @@ export function useLiveMatch(explicitMatchId?: string): LiveMatchState {
 
     async function refreshMatch() {
       setRefreshing(true);
-      let query = supabase.from("matches").select("*");
+      const query = supabase.from("matches").select("*");
 
       if (explicitMatchId) {
         const { data } = await query.eq("id", explicitMatchId).maybeSingle();
