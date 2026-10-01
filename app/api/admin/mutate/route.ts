@@ -5,7 +5,7 @@ import { getRemainingSeconds } from "@/lib/timer";
 import { MODIFIER_OPTIONS } from "@/lib/types";
 
 const MODIFIERS = new Set(["none", ...MODIFIER_OPTIONS.map((item) => item.id)]);
-const MATCH_STATUSES = new Set(["lobby", "active", "finished"]);
+const MATCH_STATUSES = new Set(["lobby", "active", "paused", "finished"]);
 const PLAYER_FIELDS = new Set(["name", "replit_url", "language"]);
 
 function uuidLike(value: unknown): value is string {
@@ -176,7 +176,7 @@ export async function POST(request: Request) {
     let { data, error } = await supabase
       .from("matches")
       .update({
-        status: "lobby",
+        status: "paused",
         timer: remaining,
         timer_started_at: null,
       })
@@ -187,7 +187,7 @@ export async function POST(request: Request) {
     if (missingTimerAnchor(error)) {
       const fallback = await supabase
         .from("matches")
-        .update({ status: "lobby", timer: remaining })
+        .update({ status: "paused", timer: remaining })
         .eq("id", body.matchId)
         .select()
         .single();
@@ -206,7 +206,7 @@ export async function POST(request: Request) {
 
     const { data: match, error: loadError } = await supabase
       .from("matches")
-      .select("round")
+      .select("round, best_of")
       .eq("id", body.matchId)
       .single();
 
@@ -214,8 +214,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: loadError?.message ?? "Match not found" }, { status: 404 });
     }
 
+    const currentRound = Math.max(1, Number(match.round ?? 1));
+    const bestOf = Math.max(1, Number(match.best_of ?? 1));
+    if (currentRound >= bestOf) {
+      return NextResponse.json(
+        { error: "Final round reached. Finish the match instead of advancing again." },
+        { status: 409 },
+      );
+    }
+
     const seconds = clampInt(body.seconds ?? 600, 1, 60 * 60) ?? 600;
-    const round = Math.max(1, Number(match.round ?? 1) + 1);
+    const round = Math.min(bestOf, currentRound + 1);
     let { data, error } = await supabase
       .from("matches")
       .update({
@@ -258,25 +267,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid score delta" }, { status: 400 });
     }
 
-    const { data: player, error: loadError } = await supabase
-      .from("players")
-      .select("id, score")
-      .eq("id", body.playerId)
-      .single();
-
-    if (loadError || !player) {
-      return NextResponse.json({ error: loadError?.message ?? "Player not found" }, { status: 404 });
-    }
-
-    const score = Math.max(0, Number(player.score ?? 0) + delta);
     const { data, error } = await supabase
-      .from("players")
-      .update({ score })
-      .eq("id", body.playerId)
-      .select()
+      .rpc("increment_player_score", {
+        p_player_id: body.playerId,
+        p_delta: delta,
+      })
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      const notFound = error.code === "PGRST116";
+      return NextResponse.json(
+        { error: notFound ? "Player not found" : error.message },
+        { status: notFound ? 404 : 500 },
+      );
+    }
     return NextResponse.json({ data });
   }
 
