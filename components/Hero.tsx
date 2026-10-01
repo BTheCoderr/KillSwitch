@@ -1,12 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Radio, Users, Zap } from "lucide-react";
+import { ArrowRight, Radio, Zap } from "lucide-react";
 import Link from "next/link";
 import { SeasonZeroBadge } from "@/components/SeasonZeroBadge";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { conversionCopy } from "@/lib/conversionCopy";
-import { liveMatch, mvpLiveCodingPositioning } from "@/lib/data";
+import { mvpLiveCodingPositioning } from "@/lib/data";
 
 const fadeUp = {
   initial: { opacity: 0, y: 14 },
@@ -33,8 +33,8 @@ export function Hero() {
                   transition={{ duration: 0.45 }}
                   className="inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-neon-green/35 bg-neon-green/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-neon-green md:text-xs md:tracking-[0.22em]"
                 >
-                  <Radio className="size-3.5 shrink-0 animate-pulse" aria-hidden />
-                  <span>Beta access · Livestream-ready MVP</span>
+                  <Radio className="size-3.5 shrink-0" aria-hidden />
+                  <span>Early access · Broadcast format</span>
                 </motion.div>
               </div>
 
@@ -48,7 +48,7 @@ export function Hero() {
                 animate={fadeUp.animate}
                 transition={{ duration: 0.45, delay: 0.04 }}
               >
-                The live coding battle arena
+                The live coding battle broadcast
               </motion.p>
 
               <motion.h1
@@ -75,8 +75,8 @@ export function Hero() {
                 animate={fadeUp.animate}
                 transition={{ duration: 0.55, delay: 0.14 }}
               >
-                Devs duel live on stream. Crowds weaponize clocks, tests, and constraints. AI keeps viewers
-                inside the matchup—no glossary required.
+                Four builders compete from approved third-party editor embeds while one producer runs the clock,
+                scoring, modifiers, and the broadcast.
               </motion.p>
 
               <motion.p
@@ -95,8 +95,9 @@ export function Hero() {
                 transition={{ duration: 0.5, delay: 0.18 }}
               >
                 <span className="text-highlight/95">{mvpLiveCodingPositioning.headline}</span>{" "}
-                <span className="mt-2 block font-normal text-highlight-dim/75 md:inline md:mt-0 md:before:mx-2 md:before:content-['·']">
-                  Livestream-ready Season Zero HUD—hosted execution tiers follow the founding launch bracket.
+                <span className="mt-2 block font-normal text-highlight-dim/75">
+                  No hosted code execution, player accounts, or fake live stats—Season Zero is intentionally the
+                  broadcast experience.
                 </span>
               </motion.p>
 
@@ -110,7 +111,7 @@ export function Hero() {
                   href="/arena"
                   className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-neon-green px-6 py-3 text-sm font-bold text-blackout shadow-[0_0_48px_rgb(57_255_20_/_0.35)] transition hover:brightness-110 active:brightness-95"
                 >
-                  Enter the Arena
+                  Preview the Format
                   <ArrowRight className="size-4" />
                 </Link>
                 <a
@@ -147,19 +148,16 @@ export function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="mx-auto mt-10 flex max-w-xl flex-wrap items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/35 px-3 py-2.5 md:gap-4"
+                className="mx-auto mt-10 grid max-w-xl gap-2 sm:grid-cols-3"
               >
-                <span className="inline-flex items-center gap-1.5 rounded-md bg-black/50 px-2.5 py-1 font-mono text-[11px] text-highlight-dim md:text-xs">
-                  <Users className="size-3.5 text-electric-blue" aria-hidden />
-                  <span className="text-highlight/90">{liveMatch.viewers.toLocaleString()}</span>
-                  <span className="text-highlight-dim/75">watching · Beta Access</span>
-                </span>
-                <span className="hidden h-4 w-px bg-white/10 sm:block" aria-hidden />
-                <span className="font-mono text-[11px] text-neon-green/90 md:text-xs">{liveMatch.timer}</span>
-                <span className="hidden h-4 w-px bg-white/10 sm:block" aria-hidden />
-                <span className="font-mono text-[11px] text-highlight-dim md:text-xs">
-                  {liveMatch.prizePool} pool
-                </span>
+                {["4 contestant slots", "Producer-controlled", "OBS-first"].map((fact) => (
+                  <span
+                    key={fact}
+                    className="rounded-md border border-white/10 bg-black/40 px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-highlight-dim"
+                  >
+                    {fact}
+                  </span>
+                ))}
               </motion.div>
             </div>
           </div>
