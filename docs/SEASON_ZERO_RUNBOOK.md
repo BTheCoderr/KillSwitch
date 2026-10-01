@@ -19,7 +19,7 @@ Before touching OBS, confirm:
   public vote-write closure, atomic score function, and sponsor-lead intake.
 - Re-run Supabase security/performance advisors after the migration.
 
-Do not run a public show with the original permissive `001_schema.sql` policies still active.
+The original permissive bootstrap is archived at `supabase/legacy/001_schema.sql`. Do not replay it against production; production must remain on the tracked hardened migration chain.
 
 ## 2. Create the rehearsal match
 
