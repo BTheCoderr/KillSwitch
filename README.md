@@ -1,5 +1,8 @@
 # Killswitch
 
+[![Validation](https://github.com/BTheCoderr/KillSwitch/actions/workflows/validate.yml/badge.svg)](https://github.com/BTheCoderr/KillSwitch/actions/workflows/validate.yml)
+[![Dependency audit](https://github.com/BTheCoderr/KillSwitch/actions/workflows/dependency-audit.yml/badge.svg)](https://github.com/BTheCoderr/KillSwitch/actions/workflows/dependency-audit.yml)
+
 <!-- repo-intro:start -->
 **Project snapshot:** Killswitch is a livestream-first competitive coding show platform with four-person battle rooms, audience modifiers and voting, producer controls, and an OBS-ready arena interface.
 
