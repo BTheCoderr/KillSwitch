@@ -80,16 +80,14 @@ export async function POST(request: Request) {
   // TODO · sponsor segmentation — derive `interest_type` or sibling table from funnel page (future).
   // TODO · tournament invites — sync to bracket applicant lists or dedicated `tournament_intent` joins.
 
-  const { data: row, error } = await admin
+  const { error } = await admin
     .from("waitlist_subscribers")
     .insert({
       first_name: firstName,
       email,
       source,
       interest_type,
-    })
-    .select("id")
-    .maybeSingle();
+    });
 
   if (error) {
     const isDup = error.code === "23505" || /duplicate|unique/i.test(error.message ?? "");
