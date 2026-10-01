@@ -11,6 +11,7 @@ type Body = {
   email?: string;
   source?: string;
   interest_type?: string;
+  website?: string;
 };
 
 export async function POST(request: Request) {
@@ -23,6 +24,10 @@ export async function POST(request: Request) {
       { ok: false as const, error: "Invalid JSON body", code: "validation" },
       { status: 400 },
     );
+  }
+
+  if (typeof body.website === "string" && body.website.trim()) {
+    return NextResponse.json({ ok: true as const, message: "Subscribed." }, { status: 201 });
   }
 
   const rawFirst =
@@ -89,14 +94,13 @@ export async function POST(request: Request) {
   if (error) {
     const isDup = error.code === "23505" || /duplicate|unique/i.test(error.message ?? "");
     if (isDup) {
-      console.warn("[waitlist] Duplicate email:", email);
+      console.info("[waitlist] duplicate subscription suppressed");
       return NextResponse.json(
         {
-          ok: false as const,
-          error: "You're already on the list — we'll ping you before the launch bracket fires.",
-          code: "duplicate" as const,
+          ok: true as const,
+          message: "Subscribed.",
         },
-        { status: 409 },
+        { status: 200 },
       );
     }
     console.error("[waitlist] Insert failed:", error.code, error.message);
@@ -106,12 +110,11 @@ export async function POST(request: Request) {
     );
   }
 
-  console.log("[waitlist] signup success:", { email, source, interest_type, id: row?.id });
+  console.info("[waitlist] signup success", { source, interest_type });
 
   return NextResponse.json(
     {
       ok: true as const,
-      id: row?.id ?? null,
       message: "Subscribed.",
     },
     { status: 201 },
