@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "KILLSWITCH — Producer",
+  title: "KILLSWITCH — Vote Simulator",
   robots: { index: false, follow: false },
 };
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function SimLayout({ children }: { children: React.ReactNode }) {
   return children;
 }

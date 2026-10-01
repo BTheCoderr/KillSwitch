@@ -8,11 +8,42 @@ import { sponsorPackages, sponsorPageCopy } from "@/lib/data";
 
 export default function SponsorPage() {
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // TODO: Partner intent → `/api/sponsor` or HubSpot / Airtable / Resend.
-    setSent(true);
+    setSending(true);
+    setError(null);
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const payload = {
+      name: String(formData.get("name") ?? ""),
+      email: String(formData.get("email") ?? ""),
+      company: String(formData.get("company") ?? ""),
+      website: String(formData.get("website") ?? ""),
+    };
+
+    try {
+      const response = await fetch("/api/sponsor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await response.json()) as { ok?: boolean; error?: string };
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error ?? "Request could not be saved.");
+      }
+
+      form.reset();
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Request could not be saved.");
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -64,18 +95,15 @@ export default function SponsorPage() {
         >
           <h2 className="font-heading text-xl font-bold text-white md:text-2xl">Request sponsor deck</h2>
           <p className="mt-3 text-sm leading-relaxed text-highlight-dim">
-            {/* TODO: Route to `/api/sponsor-intent` or CRM webhook + Resend confirmations. */}
-            Tell us where to send decks and integrations details—client-side acknowledgement only until ops wires
-            the inbox.
+            Tell us where to send the sponsor deck and event details. Your request is saved only after the server confirms it.
           </p>
 
           {sent ? (
             <div className="mt-10 rounded-xl border border-volt-purple/35 bg-volt-purple/10 p-6 text-center text-violet-100 md:p-8">
               <CheckCircle2 className="mx-auto size-11 text-neon-green" />
-              <p className="mt-4 font-heading text-lg font-bold text-white">Deck cue locked.</p>
+              <p className="mt-4 font-heading text-lg font-bold text-white">Request received.</p>
               <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-highlight-dim">
-                Season Zero sponsorship inventory closes in waves—we&apos;ll match you with overlays, presented-by
-                beats, and replay packages.
+                Your sponsor request was saved successfully. The team can follow up with the current Season Zero deck and event details.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <button
@@ -96,6 +124,14 @@ export default function SponsorPage() {
             </div>
           ) : (
             <form className="mt-9 space-y-6" onSubmit={onSubmit}>
+              <input
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="hidden"
+              />
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold tracking-wide text-highlight-dim/65 uppercase">
@@ -129,11 +165,17 @@ export default function SponsorPage() {
                   className="mt-2 w-full min-h-[44px] rounded-lg border border-white/11 bg-black/45 px-3 py-2.5 text-sm text-white outline-none focus:border-neon-green/45 focus:ring-2"
                 />
               </div>
+              {error && (
+                <p role="alert" className="rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                  {error}
+                </p>
+              )}
               <button
                 type="submit"
-                className="rounded-lg bg-volt-purple px-8 py-3.5 text-sm font-black text-white shadow-[0_0_36px_rgb(138_43_226_/_0.28)] hover:brightness-110"
+                disabled={sending}
+                className="min-h-[44px] rounded-lg bg-volt-purple px-8 py-3.5 text-sm font-black text-white shadow-[0_0_36px_rgb(138_43_226_/_0.28)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Request Sponsor Deck
+                {sending ? "Saving…" : "Request Sponsor Deck"}
               </button>
             </form>
           )}

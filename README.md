@@ -16,12 +16,12 @@
 | --- | --- |
 | Show format | Four-person livestream coding battle |
 | Broadcast | OBS-ready arena, transparent overlay, Season Zero HUD |
-| Audience | Live votes + chaos modifiers |
+| Audience | Producer/Twitch-ingested votes + show-rule modifiers |
 | Producer | Protected control room, simulator, readiness gate |
 | State | Supabase Postgres + Realtime |
 | Security | Server-only producer mutations, Basic-auth protected admin surfaces, embed allowlist |
 | Timing | Server-anchored countdown support for synchronized clients |
-| Intake | Real validated competitor applications persisted server-side |
+| Intake | Competitor, waitlist, and sponsor requests persisted server-side |
 
 ### Why this is more than a landing page
 
@@ -30,27 +30,24 @@ Killswitch treats the **broadcast itself as the product UI**. The public arena, 
 The current explainer is deterministic and match-aware; an optional LLM commentary layer can be added later without making the live show dependent on an AI provider.
 <!-- portfolio-refresh:end -->
 
-> Code Under Pressure. A live competitive coding show — 4 contestants, one problem, audience-controlled chaos.
+> Code Under Pressure. A producer-run competitive coding broadcast — 4 contestants, one problem, controlled audience modifiers.
 
 Public pages ship a **front-end MVP**: OBS/stream-first arena UI—not a hosted code execution engine yet. Contestants use embeddable editors; Killswitch owns the broadcast shell.
 
 ---
 
-## Roadmap
+## Product boundary
 
-**Develop a livestream-ready MVP with live coding battle rooms.**
+Season Zero is intentionally a **broadcast product**, not a self-service multiplayer coding platform.
 
-The **current MVP** messaging and UI center on:
+- Four third-party editor embeds
+- Producer-controlled synchronized timer and scoring
+- Show-rule modifiers and controlled vote ingestion
+- Match-aware deterministic explanation
+- OBS-first live, overlay, and grid surfaces
+- Server-persisted competitor, waitlist, and sponsor intake
 
-- Live coding battle rooms  
-- Real-time contestant code panels  
-- Audience voting during matches  
-- Match-aware live explanation  
-- Tournament and replay flow  
-
-**Explicitly not in this MVP pass:** hosted code execution, viewer auth, payments, or new persistence beyond what is already wired elsewhere in the repo.
-
-A real-time broadcast surface for OBS (plus optional Supabase-backed producer routes): 2×2 grid of live code editors, HUD with timer and modifiers, and producer tools for modifiers and votes. Built for the camera first.
+Not part of Season Zero: hosted code execution, viewer/player accounts, payments, room join/rejoin flows, or a mobile spectator app.
 
 ### Social preview
 
@@ -69,10 +66,10 @@ Killswitch now ships a dynamic 1200×630 launch card through `app/opengraph-imag
 | `/overlay`       | Lighter transparent overlay layout for OBS                              |
 | `/admin/control` | **Protected producer panel** — modifiers, votes, scores, match control  |
 | `/admin/readiness` | **Protected launch gate** — deployment/database readiness checks      |
-| `/control`       | **Protected** alternate match-control UI                                |
+| `/control`       | **Protected** legacy alias that redirects to `/admin/control`          |
 | `/sim`           | **Protected** producer/dev vote simulator                              |
 | `/grid`          | Standalone 2×2 embed grid                                               |
-| `/arena`         | Stream-ready **Season Zero HUD** (beta panels—embed integrations roll out alongside launch brackets) |
+| `/arena`         | Clearly labeled four-slot format preview; not a live-match surface       |
 | `/apply`         | Competitor form — validated server-side and persisted to `applications` |
 | `/api/commentary`| `POST` → match-aware live explainer built from current match state       |
 | `/api/health`    | Readiness JSON for deployment/database producer configuration             |
@@ -139,10 +136,12 @@ Schema files: `supabase/migrations/001_schema.sql`, `002_applications.sql`.
 
 - `matches` — `status`, `round`, `best_of`, `timer`, optional `timer_started_at`, `active_modifier`, `problem_*`
 - `players` — slot 1–4, legacy `replit_url` column (validated editor embed URL), `language`, `score`
-- `votes` — `command` (e.g. `darkmode`, `no-backspace`)
-- `applications` — competitor `/apply` submissions; current app writes through the server-only service-role route
+- `votes` — `command` (e.g. `darkmode`, `no-backspace`); public clients are read-only
+- `applications` — competitor `/apply` submissions; server-only service-role writes
+- `waitlist_subscribers` — early-access intake; server-only service-role writes
+- `sponsor_leads` — sponsor deck requests; server-only service-role writes
 
-`001` is the original sprint schema and contains intentionally permissive policies. **Do not treat those policies as production-safe.** The repo now includes `supabase/security_hardening.sql`, which reduces browser access to public reads plus valid vote inserts and moves producer mutations to the protected server API. The correct live Supabase project is connected and the hardening migration has been applied to production.
+`001` is the original sprint schema and contains intentionally permissive policies. **Do not treat those policies as production-safe.** The repo's current migrations reduce browser database access to public reads only; vote inserts and all producer mutations go through the protected server API. The correct live Supabase project is connected and the hardening migration has been applied to production.
 
 `applications` is now written through `/api/apply` with server-side validation and the service-role client. The hardening SQL removes public application writes entirely.
 
@@ -204,7 +203,7 @@ After the production database is hardened, run `npm run seed:season-zero` to cre
 
 ## Production day flow (ghost chat)
 
-For the launch you read YT/Twitch chat yourself and operate `/admin/control` to fire modifiers and inject votes. After launch, `scripts/twitch-bot/` (tmi.js) can insert public votes from real chat once Twitch env vars are set. Run it from the repository root with `npm run twitch:bot`. The bot uses `TWITCH_OAUTH_TOKEN` and the public Supabase anon key only—never the service-role key.
+For the first rehearsal, operate `/admin/control` to fire modifiers and inject votes. When enabled, `scripts/twitch-bot/` reads the active match with the public Supabase key but submits vote writes through the protected producer API. It uses the producer Basic-auth credentials, a per-viewer cooldown, and never receives the service-role key.
 
 ---
 
@@ -212,10 +211,10 @@ For the launch you read YT/Twitch chat yourself and operate `/admin/control` to 
 
 - **Producer route protection** — implemented with fail-closed HTTP Basic auth in `proxy.ts` for `/admin`, `/control`, `/sim`, and `/api/admin`.
 - **Producer writes** — routed through `POST /api/admin/mutate` using the server-only Supabase service role.
-- **Public database permissions** — least-privilege hardening is applied to the connected production Supabase project and tracked in repository SQL/migration history.
+- **Public database permissions** — repository migrations reduce browser access to read-only match state and remove anonymous vote inserts; production must apply the pending migrations before rehearsal.
 - **Countdown synchronization** — code supports a server-written `timer_started_at` anchor and remains backward-compatible before the column exists. `timer_started_at` is now live in production and tracked by `20260930183603_add_authoritative_timer_anchor.sql` for authoritative cross-client timing.
 - **Embed safety** — producer writes and arena rendering restrict editor iframes to an HTTPS allowlist.
-- **Competitor intake** — `/apply` persists only after server validation succeeds; the UI no longer fakes success.
+- **Intake** — `/apply`, waitlist, and sponsor requests only show success after server-side persistence succeeds.
 - **Live explainer** — commentary is generated deterministically from real match, score, modifier, and vote state instead of random canned lines.
 - **Launch tooling** — `/api/health`, protected `/admin/readiness`, the Season Zero seed command, dynamic social card, and an operator dress-rehearsal runbook are included.
 - **CI** — GitHub Actions runs clean install, lint, and production build on PRs and pushes to `main`.

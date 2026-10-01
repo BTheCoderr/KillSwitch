@@ -1,6 +1,6 @@
 export type Match = {
   id: string;
-  status: "lobby" | "active" | "finished";
+  status: "lobby" | "active" | "paused" | "finished";
   round: number;
   best_of: number;
   timer: number;

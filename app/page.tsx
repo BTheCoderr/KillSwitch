@@ -42,7 +42,7 @@ export default function Home() {
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <SeasonZeroBadge />
                 <p className="text-xs font-semibold tracking-[0.24em] text-electric-blue uppercase">
-                  Roadmap · Live coding MVP
+                  Season Zero · Broadcast model
                 </p>
               </div>
               <h2 className="mt-4 max-w-3xl font-heading text-2xl font-bold leading-tight text-white md:text-3xl lg:text-[2rem] lg:leading-snug">
@@ -73,8 +73,8 @@ export default function Home() {
                 transition={{ duration: 0.4, delay: 0.25 }}
                 className="mt-10 text-xs leading-relaxed text-highlight-dim/65 md:text-sm"
               >
-                Season Zero concentrates on spectacle, early-access intake, and a stream-ready arena—auth,
-                payments, and hosted runners layer in as the first launch bracket scales.
+                Season Zero stays intentionally focused: four contestant feeds, one producer control room,
+                synchronized show state, and OBS-ready output.
               </motion.p>
             </div>
           </motion.div>
@@ -92,12 +92,11 @@ export default function Home() {
               How it works
             </p>
             <h2 className="mt-3 font-heading text-2xl font-bold text-white md:text-4xl md:leading-tight">
-              Same roadmap, tighter rounds.
+              One show flow, four contestant slots.
             </h2>
             <p className="mt-3 max-w-2xl font-body text-sm font-medium leading-relaxed text-highlight md:text-[15px]">
-              Three beats choreographed for launch: duel-ready rooms, audience payloads, AI match narration,
-              bracket arcs, and replay energy—all shipping as an early-access, livestream-ready MVP while founding
-              competitors and sponsors onboard.
+              The producer loads the contestants, runs the clock and modifiers, then calls the final result.
+              The stream is the spectator experience; the site supports the show rather than pretending to be a hosted game platform.
             </p>
           </motion.div>
           <div className="mt-10 grid gap-5 md:grid-cols-3 md:gap-6">

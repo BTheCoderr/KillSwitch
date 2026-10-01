@@ -1,286 +1,190 @@
 "use client";
 
 import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Code2,
+  Monitor,
+  Radio,
+  ShieldCheck,
+  Timer,
+  Trophy,
+  Zap,
+} from "lucide-react";
 import Link from "next/link";
-import { Brain, Cpu, DollarSign, Radio, Sparkles, Trophy, Twitch, Users, Youtube } from "lucide-react";
-import { AudiencePulseBar } from "@/components/AudiencePulseBar";
-import { AudienceVotePanel } from "@/components/AudienceVotePanel";
-import { CodePanel } from "@/components/CodePanel";
-import { StatPill } from "@/components/StatPill";
 import { SeasonZeroBadge } from "@/components/SeasonZeroBadge";
-import { codeSamples, liveMatch, mvpLiveCodingPositioning } from "@/lib/data";
-import { conversionCopy } from "@/lib/conversionCopy";
+import { MODIFIER_OPTIONS } from "@/lib/types";
+import { mvpLiveCodingPositioning } from "@/lib/data";
 
-const fade = {
-  initial: { opacity: 0, y: 10 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: "-40px" },
-};
+const slots = [
+  { n: 1, accent: "border-neon-green/35 text-neon-green" },
+  { n: 2, accent: "border-electric-blue/35 text-electric-blue" },
+  { n: 3, accent: "border-volt-purple/35 text-volt-purple" },
+  { n: 4, accent: "border-amber-400/35 text-amber-300" },
+];
 
 export default function ArenaPage() {
   return (
-    <div className="relative flex min-h-[70vh] flex-1 flex-col overflow-hidden bg-blackout">
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[480px]"
-        aria-hidden
-        style={{
-          background:
-            "radial-gradient(ellipse 85% 60% at 50% -20%, rgb(57 255 20 / 0.12), transparent 55%), radial-gradient(ellipse 50% 40% at 100% 0%, rgb(39 151 255 / 0.1), transparent 50%), radial-gradient(ellipse 40% 35% at 0% 20%, rgb(138 43 226 / 0.09), transparent 50%)",
-        }}
-      />
-
-      <div className="relative border-b border-white/[0.07] bg-slate-dark/75 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-4 py-4 md:px-6">
-          <div className="flex flex-wrap items-center justify-center gap-2 md:justify-between">
-            <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-neon-green/90">
-              <Cpu className="size-3.5 shrink-0" aria-hidden />
-              Stream-ready MVP
+    <div className="flex flex-1 flex-col">
+      <section className="relative overflow-hidden border-b border-white/[0.07] bg-slate-dark/35 px-4 py-12 md:px-8 md:py-16">
+        <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-[70%] -translate-x-1/2 bg-neon-green/5 blur-3xl" />
+        <div className="relative mx-auto max-w-6xl">
+          <div className="flex flex-wrap items-center gap-3">
+            <SeasonZeroBadge />
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-highlight-dim">
+              Format preview · not a live match
             </span>
-            <span className="mx-2 hidden h-px w-8 bg-white/10 md:inline" aria-hidden />
-            <span className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-highlight-dim/75">
-              Beta HUD · OBS browser source
-            </span>
+          </div>
+          <h1 className="mt-6 max-w-4xl font-heading text-4xl font-black leading-tight text-white md:text-6xl">
+            The broadcast cockpit is the product.
+          </h1>
+          <p className="mt-5 max-w-3xl font-body text-base leading-relaxed text-highlight-dim md:text-lg">
+            {mvpLiveCodingPositioning.scopeNote}
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              href="/"
-              className="basis-full pt-3 text-center text-[10px] text-electric-blue/90 underline-offset-4 hover:text-neon-green hover:underline sm:basis-auto sm:ml-auto sm:pt-0 md:text-[11px]"
+              href="/apply"
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-neon-green px-6 py-3 text-sm font-black text-blackout hover:brightness-110"
             >
-              Back to landing
+              Apply to Compete
+              <ArrowRight className="size-4" />
+            </Link>
+            <Link
+              href="/#early-access"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-white/15 bg-black/35 px-6 py-3 text-sm font-semibold text-white hover:border-neon-green/35"
+            >
+              Join Early Access
             </Link>
           </div>
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 md:justify-start">
-            <SeasonZeroBadge />
-            <span className="rounded-full border border-electric-blue/35 bg-electric-blue/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-electric-blue">
-              Beta Access
-            </span>
-          </div>
-          <div className="mt-4 space-y-3 rounded-lg border border-white/[0.06] bg-black/40 px-4 py-3 text-highlight md:text-left">
-            <p className="text-center font-body text-[13px] font-semibold leading-snug md:text-left md:text-sm">
-              {mvpLiveCodingPositioning.headline}{" "}
-              <span className="font-normal text-highlight-dim">
-                Stream-first battle panels are live in beta—cloud compile hooks land in a later drop; embed feeds
-                wire as integrations go out.
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 md:px-8 md:py-14">
+        <div className="ks-panel overflow-hidden rounded-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-black/45 px-5 py-4 md:px-7">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-highlight-dim ring-1 ring-white/10">
+                <Radio className="size-3" />
+                Simulated layout
               </span>
-            </p>
-            <p className="text-center text-xs font-medium text-highlight md:text-left">
-              {conversionCopy.foundingCompetitors}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-4 pb-1 md:justify-start">
-              <Link
-                href="/apply"
-                className="text-xs font-bold uppercase tracking-wide text-neon-green underline underline-offset-4 hover:brightness-110"
+              <span className="font-mono text-xs text-highlight-dim/55">ROUND 1 OF 3</span>
+            </div>
+            <div className="inline-flex items-center gap-2 font-mono text-2xl font-black text-neon-green">
+              <Timer className="size-5" />
+              10:00
+            </div>
+          </div>
+
+          <div className="grid gap-3 p-4 md:grid-cols-2 md:p-6">
+            {slots.map((slot) => (
+              <motion.div
+                key={slot.n}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className={`relative min-h-64 overflow-hidden rounded-xl border-2 bg-black/60 ${slot.accent}`}
               >
-                Apply · Season Zero bracket
-              </Link>
-              <Link href="/#early-access" className="text-xs font-semibold text-electric-blue hover:underline">
-                Join Early Access →
-              </Link>
+                <div className="absolute left-0 top-0 flex items-center gap-2 border-b border-r border-current/30 bg-slate-950/90 px-3 py-2">
+                  <span className="font-mono text-xs font-black uppercase tracking-[0.18em]">
+                    Slot {slot.n}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wide text-highlight-dim/50">
+                    contestant feed
+                  </span>
+                </div>
+                <div className="flex h-full min-h-64 flex-col items-center justify-center gap-3 text-center">
+                  <Monitor className="size-8 opacity-35" />
+                  <p className="text-sm font-semibold text-highlight/75">Approved editor embed loads here</p>
+                  <p className="max-w-xs text-xs leading-relaxed text-highlight-dim/45">
+                    Replit, StackBlitz, Playcode, or CodeSandbox. Killswitch does not execute contestant code.
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="grid gap-3 border-t border-white/10 bg-black/25 p-4 sm:grid-cols-3 md:p-6">
+            <div className="rounded-xl border border-neon-green/20 bg-neon-green/5 p-4">
+              <Zap className="size-4 text-neon-green" />
+              <p className="mt-3 text-xs font-black uppercase tracking-[0.16em] text-neon-green">
+                Active modifier
+              </p>
+              <p className="mt-1 font-heading text-lg font-bold text-white">No Backspace</p>
+              <p className="mt-1 text-xs leading-relaxed text-highlight-dim/55">
+                A show rule contestants follow; the external editor is not technically locked.
+              </p>
             </div>
-            <ul className="mx-auto max-w-xl list-inside list-disc space-y-1 text-left font-body text-[12px] leading-relaxed text-highlight-dim marker:text-neon-green/80 md:text-[13px]">
-              {mvpLiveCodingPositioning.pillars.map((line) => (
-                <li key={line}>{line}</li>
+            <div className="rounded-xl border border-electric-blue/20 bg-electric-blue/5 p-4">
+              <Trophy className="size-4 text-electric-blue" />
+              <p className="mt-3 text-xs font-black uppercase tracking-[0.16em] text-electric-blue">
+                Scoring
+              </p>
+              <p className="mt-1 font-heading text-lg font-bold text-white">Producer controlled</p>
+              <p className="mt-1 text-xs leading-relaxed text-highlight-dim/55">
+                Score changes are manual, synchronized, and rendered to every broadcast source.
+              </p>
+            </div>
+            <div className="rounded-xl border border-volt-purple/20 bg-volt-purple/5 p-4">
+              <ShieldCheck className="size-4 text-volt-purple" />
+              <p className="mt-3 text-xs font-black uppercase tracking-[0.16em] text-volt-purple">
+                Audience input
+              </p>
+              <p className="mt-1 font-heading text-lg font-bold text-white">Controlled ingestion</p>
+              <p className="mt-1 text-xs leading-relaxed text-highlight-dim/55">
+                Votes enter through show controls or the rate-limited Twitch bot, not an open browser write path.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-4 pb-14 md:px-8 md:pb-20">
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-neon-green">
+              What the show actually does
+            </p>
+            <h2 className="mt-3 font-heading text-3xl font-black text-white">
+              Simple enough to run. Clear enough to trust.
+            </h2>
+            <div className="mt-7 space-y-3">
+              {mvpLiveCodingPositioning.pillars.map((pillar) => (
+                <div
+                  key={pillar}
+                  className="flex items-start gap-3 rounded-xl border border-white/8 bg-white/[0.025] px-4 py-3"
+                >
+                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-neon-green" />
+                  <span className="text-sm text-highlight">{pillar}</span>
+                </div>
               ))}
-            </ul>
+            </div>
+          </div>
+
+          <div className="ks-panel rounded-2xl p-6 md:p-7">
+            <div className="flex items-center gap-2">
+              <Code2 className="size-5 text-electric-blue" />
+              <h3 className="font-heading text-xl font-bold text-white">Modifier vocabulary</h3>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-highlight-dim">
+              These are the real Season Zero commands used by the show state.
+            </p>
+            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              {MODIFIER_OPTIONS.map((option) => (
+                <div
+                  key={option.id}
+                  className="rounded-lg border border-white/8 bg-black/35 px-3 py-3"
+                >
+                  <p className="font-mono text-[10px] uppercase tracking-wide text-neon-green/75">
+                    !{option.id}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white">{option.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="relative border-b border-neon-green/10 bg-black/55 shadow-[inset_0_-1px_0_0_rgb(57_255_20_/_0.08)]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-5 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-y-6 md:px-6 md:py-6">
-          <div className="flex min-w-0 flex-wrap items-center gap-3">
-            <motion.span
-              {...fade}
-              transition={{ duration: 0.4 }}
-              className="truncate font-heading text-lg font-bold text-white md:text-xl"
-            >
-              Kill<span className="text-neon-green">switch</span>
-            </motion.span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-danger-red/14 px-2.5 py-0.5 text-[10px] font-black tracking-wide text-danger-red uppercase ring-1 ring-danger-red/35">
-              <span className="size-1.5 animate-pulse rounded-full bg-danger-red" />
-              LIVE BROADCAST
-            </span>
-          </div>
-
-          <motion.div
-            {...fade}
-            transition={{ duration: 0.45, delay: 0.04 }}
-            className="flex justify-center md:justify-end"
-          >
-            <div className="relative flex flex-wrap items-center justify-center gap-4 rounded-xl border border-white/[0.09] bg-gradient-to-r from-black/70 via-black/45 to-black/70 px-5 py-3 shadow-[0_24px_60px_-30px_rgb(0_0_0_/_0.9)]">
-              <Sparkles className="absolute -left-1 -top-1 size-3 text-neon-green/40" aria-hidden />
-              <p className="font-mono text-base font-black text-neon-green md:text-xl">
-                {liveMatch.contestantA}
-              </p>
-              <span className="font-heading text-lg font-black text-highlight md:text-xl">VS</span>
-              <p className="font-mono text-base font-black text-electric-blue md:text-xl">
-                {liveMatch.contestantB}
-              </p>
-            </div>
-          </motion.div>
-
-          <div className="flex flex-wrap items-center gap-2 md:justify-end">
-            <StatPill label="Round" value={`${liveMatch.round} · Bo${liveMatch.bestOf}`} tone="purple" />
-            <StatPill label="Spectators" value={liveMatch.viewers.toLocaleString()} icon={Users} />
-            <StatPill label="Prize pool" value={liveMatch.prizePool} icon={DollarSign} tone="green" />
-            <Trophy className="size-5 text-amber-400/90 opacity-70" aria-hidden />
-            <Twitch className="size-5 text-volt-purple" aria-hidden />
-            <Youtube className="size-5 text-danger-red" aria-hidden />
-          </div>
-        </div>
-      </div>
-
-      <motion.div
-        {...fade}
-        transition={{ duration: 0.5 }}
-        className="relative border-b border-white/[0.06] bg-[linear-gradient(180deg,rgb(5_7_10)_0%,rgb(11_15_23)_55%,rgb(5_7_10)_100%)] py-6 md:py-8"
-      >
-        <p className="text-center font-mono text-[10px] uppercase tracking-[0.35em] text-highlight-dim/45">
-          Match clock
-        </p>
-        <p className="mt-3 text-center font-mono text-5xl font-black tabular-nums tracking-[0.12em] text-neon-green drop-shadow-[0_0_34px_rgb(57_255_20_/_0.35)] md:text-7xl md:tracking-[0.18em]">
-          {liveMatch.timer}
-        </p>
-        <p className="mt-4 text-center text-xs text-highlight-dim/70 md:text-sm">
-          {liveMatch.contestantA} clawing brute swaps ·{" "}
-          <span className="text-highlight/90">{liveMatch.contestantB}</span>
-          threading index maps
-        </p>
-      </motion.div>
-
-      <div className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6 md:gap-6 md:px-6 md:py-8 lg:flex-row lg:gap-8">
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="flex min-w-0 flex-1 flex-col gap-5"
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <CodePanel
-              title={liveMatch.contestantA}
-              language={liveMatch.languageA}
-              code={codeSamples[liveMatch.contestantA]}
-              accent="green"
-              compileStatus="Compiles · 3.2s"
-            />
-            <CodePanel
-              title={liveMatch.contestantB}
-              language={liveMatch.languageB}
-              code={codeSamples[liveMatch.contestantB]}
-              accent="blue"
-              compileStatus="Compiles · 2.7s"
-            />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <motion.div {...fade} transition={{ duration: 0.4 }} className="ks-panel rounded-xl p-5">
-              <p className="text-[10px] font-semibold tracking-[0.2em] text-highlight-dim/45 uppercase">
-                Current problem
-              </p>
-              <p className="mt-2 font-heading text-xl font-bold text-white">{liveMatch.problem}</p>
-              <p className="mt-2 font-body text-xs leading-relaxed text-highlight-dim">
-                Minimum ops showdown—strategy vs brute force framed for camera legibility.
-              </p>
-              <span className="mt-4 inline-flex items-center rounded border border-volt-purple/35 bg-volt-purple/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-volt-purple">
-                {liveMatch.difficulty}
-              </span>
-            </motion.div>
-
-            <motion.div {...fade} transition={{ duration: 0.4, delay: 0.04 }} className="ks-panel rounded-xl p-5">
-              <p className="text-[10px] font-semibold tracking-[0.2em] text-highlight-dim/45 uppercase">
-                Live chatter
-              </p>
-              <div className="mt-4 space-y-2.5 font-mono text-[11px] leading-snug md:text-xs">
-                <p>
-                  <span className="font-semibold text-neon-green">byteHype</span>
-                  <span className="text-highlight-dim/60">:</span>{" "}
-                  <span className="text-highlight-dim">NO BUILT-INS PLEASE</span>
-                </p>
-                <p>
-                  <span className="font-semibold text-electric-blue">streamProof</span>
-                  <span className="text-highlight-dim/60">:</span>{" "}
-                  <span className="text-highlight-dim">{liveMatch.contestantB} mapping diff is cinematic</span>
-                </p>
-                <p>
-                  <span className="font-semibold text-volt-purple">lunaNation</span>
-                  <span className="text-highlight-dim/60">:</span>{" "}
-                  <span className="text-highlight-dim">{liveMatch.contestantA} still has runway</span>
-                </p>
-              </div>
-            </motion.div>
-
-            <motion.div {...fade} transition={{ duration: 0.4, delay: 0.08 }} className="ks-panel rounded-xl p-5">
-              <p className="text-[10px] font-semibold tracking-[0.2em] text-highlight-dim/45 uppercase">
-                Spectator heat
-              </p>
-              <p className="mt-3 font-body text-sm text-highlight-dim">Momentum check — who steals this duel?</p>
-              <div className="mt-5 space-y-3">
-                <div>
-                  <div className="flex justify-between text-xs">
-                    <span className="font-semibold text-neon-green">{liveMatch.contestantA}</span>
-                    <span className="font-mono tabular-nums text-neon-green">58%</span>
-                  </div>
-                  <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-black/55 ring-1 ring-inset ring-white/5">
-                    <div className="h-full w-[58%] rounded-full bg-gradient-to-r from-neon-green to-electric-blue" />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs">
-                    <span className="font-semibold text-electric-blue">{liveMatch.contestantB}</span>
-                    <span className="font-mono tabular-nums text-highlight-dim">42%</span>
-                  </div>
-                  <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-black/55 ring-1 ring-inset ring-white/5">
-                    <div className="h-full w-[42%] rounded-full bg-gradient-to-r from-electric-blue to-volt-purple/90" />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
-
-        <motion.aside
-          initial={{ opacity: 0, x: 14 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.05 }}
-          className="relative flex w-full shrink-0 flex-col gap-4 lg:w-[22rem]"
-        >
-          <div className="pointer-events-none absolute -left-24 top-40 hidden size-64 rounded-full bg-volt-purple/10 blur-[100px] lg:block" />
-
-          <AudienceVotePanel />
-
-          <div className="ks-panel rounded-xl p-5">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-volt-purple">
-              <Brain className="size-4 shrink-0" />
-              AI explainer{" "}
-              <span className="rounded bg-violet-500/18 px-1.5 py-0.5 text-[9px] font-semibold lowercase tracking-normal text-highlight-dim/80 ring-1 ring-white/10">
-                beta
-              </span>
-            </div>
-            <p className="mt-4 font-body text-sm leading-relaxed text-highlight-dim">{liveMatch.analystSnippet}</p>
-            <button
-              type="button"
-              className="mt-5 w-full rounded-lg border border-volt-purple/35 bg-gradient-to-br from-volt-purple/20 to-transparent py-3 text-[11px] font-bold uppercase tracking-wide text-volt-purple shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.06)] transition hover:bg-violet-500/20"
-            >
-              Show walkthrough
-            </button>
-          </div>
-
-          <div className="ks-panel rounded-xl p-5">
-            <AudiencePulseBar />
-          </div>
-
-          <div className="rounded-xl border border-neon-green/22 bg-[linear-gradient(145deg,rgb(57_255_20_/_0.08)_0%,transparent_60%)] p-6 text-center shadow-[0_0_40px_-12px_rgb(57_255_20_/_0.35)]">
-            <Radio className="mx-auto size-6 text-neon-green opacity-95" aria-hidden />
-            <p className="mt-3 font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-highlight-dim/55">
-              Sponsor slot · live read
-            </p>
-            <p className="mt-4 font-heading text-lg font-black text-white md:text-xl">
-              <span className="text-highlight-dim/80">Sponsored by</span>{" "}
-              <span className="text-neon-green">{liveMatch.sponsorBrand}</span>
-            </p>
-          </div>
-        </motion.aside>
-      </div>
+      </section>
     </div>
   );
 }
