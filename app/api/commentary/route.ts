@@ -83,7 +83,7 @@ export async function POST(request: Request) {
 
   const [playersRes, votesRes] = await Promise.all([
     supabase.from("players").select("*").eq("match_id", match.id),
-    supabase.from("votes").select("*").eq("match_id", match.id),
+    supabase.from("votes").select("*").eq("match_id", match.id).order("created_at", { ascending: false }).limit(500),
   ]);
 
   const players = (playersRes.data as Player[] | null) ?? [];
