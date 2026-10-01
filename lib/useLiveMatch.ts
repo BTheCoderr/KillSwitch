@@ -117,12 +117,27 @@ export function useLiveMatch(explicitMatchId?: string): LiveMatchState {
         return;
       }
 
-      const { data } = await query
+      const { data: inProgress } = await supabase
+        .from("matches")
+        .select("*")
+        .in("status", ["active", "paused"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      let next = (inProgress as Match | null) ?? null;
+
+      if (!next) {
+        const { data: latest } = await supabase
+          .from("matches")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        next = (latest as Match | null) ?? null;
+      }
+
       if (cancelled) return;
-      const next = (data as Match | null) ?? null;
       setMatch(next);
       if (next && selectedIdRef.current !== next.id) {
         await bindMatchData(next.id);
@@ -151,8 +166,8 @@ export function useLiveMatch(explicitMatchId?: string): LiveMatchState {
             return;
           }
 
-          // A new match can be created while OBS/browser sources stay open.
-          // Re-select the newest record so the source moves forward without refresh.
+          // Re-evaluate selection without letting a newly prepared lobby replace
+          // an active/paused broadcast.
           void refreshMatch();
         },
       )
