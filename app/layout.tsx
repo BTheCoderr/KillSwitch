@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Rajdhani, Space_Grotesk, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Footer } from "@/components/Footer";
-import { MobileCtaBar } from "@/components/MobileCtaBar";
-import { Navbar } from "@/components/Navbar";
+import { SiteChrome } from "@/components/SiteChrome";
 
 const rajdhani = Rajdhani({
   variable: "--font-rajdhani",
@@ -90,12 +88,7 @@ export default function RootLayout({
       <body
         className={`${rajdhani.variable} ${spaceGrotesk.variable} ${inter.variable} ${geistMono.variable} flex min-h-screen flex-col font-sans`}
       >
-        <Navbar />
-        <main className="flex flex-1 flex-col pb-24 pt-16 md:pb-0 md:pt-[4.25rem]">
-          {children}
-        </main>
-        <Footer />
-        <MobileCtaBar />
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );
