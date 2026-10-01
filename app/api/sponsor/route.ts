@@ -52,9 +52,9 @@ export async function POST(request: Request) {
   }
 
   const { error } = await admin.from("sponsor_leads").insert({
-    name,
+    contact_name: name,
+    company_name: company,
     email,
-    company,
     source: "web",
   });
 
