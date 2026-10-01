@@ -13,7 +13,7 @@ export type WaitlistFormProps = {
   id?: string;
 };
 
-type ApiOk = { ok: true; id: string | null; message: string };
+type ApiOk = { ok: true; message: string };
 type ApiErr = { ok: false; error: string; code?: string };
 
 /**
@@ -28,7 +28,6 @@ export function WaitlistForm({
 }: WaitlistFormProps) {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [duplicateMessage, setDuplicateMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -37,8 +36,8 @@ export function WaitlistForm({
     const data = new FormData(form);
     const firstName = String(data.get("firstName") ?? "").trim();
     const email = String(data.get("email") ?? "").trim();
+    const website = String(data.get("website") ?? "").trim();
 
-    setDuplicateMessage(null);
     setErrorMessage(null);
 
     if (!firstName || !email) return;
@@ -53,30 +52,28 @@ export function WaitlistForm({
           email,
           source,
           interest_type: "launch_waitlist",
+          website,
         }),
       });
 
       const json = (await res.json()) as ApiOk | ApiErr;
 
       if (res.ok && "ok" in json && json.ok) {
-        console.log("[waitlist] client signup success", { source, email });
         setSuccess(true);
         form.reset();
         return;
       }
 
       const err = json as ApiErr;
-      if (err.code === "duplicate") {
-        console.warn("[waitlist] client duplicate:", email);
-        setDuplicateMessage(err.error ?? "You're already on the list.");
-        return;
-      }
-
-      console.error("[waitlist] client signup failed", res.status, err);
+      console.error("[waitlist] client signup failed", res.status);
       setErrorMessage(err.error ?? "Couldn't save your signup. Try again.");
     } catch (caught) {
-      console.error("[waitlist] client network error:", caught);
-      setErrorMessage("Network error. Check your connection and retry.");
+      console.error("[waitlist] client network error");
+      setErrorMessage(
+        caught instanceof Error && caught.message
+          ? "Network error. Check your connection and retry."
+          : "Network error. Check your connection and retry.",
+      );
     } finally {
       setLoading(false);
     }
@@ -135,15 +132,14 @@ export function WaitlistForm({
               onSubmit={onSubmit}
               data-waitlist-source={source}
             >
-              {duplicateMessage ? (
-                <p
-                  role="status"
-                  className="rounded-xl border border-electric-blue/35 bg-electric-blue/10 px-3 py-2.5 font-body text-xs font-medium leading-snug text-electric-blue md:text-[13px]"
-                >
-                  {duplicateMessage}
-                </p>
-              ) : null}
-
+              <input
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="hidden"
+              />
               {errorMessage ? (
                 <p
                   role="alert"
@@ -204,7 +200,7 @@ export function WaitlistForm({
                   </>
                 ) : (
                   <>
-                    Enter the Arena
+                    Join Early Access
                     <ArrowRight className="size-4 shrink-0" aria-hidden />
                   </>
                 )}
