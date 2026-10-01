@@ -14,9 +14,9 @@ Before touching OBS, confirm:
   - `votes`
   - `applications`
   - `waitlist_subscribers`
-- Apply generated Supabase migrations equivalent to:
-  - `supabase/security_hardening.sql`
-  - `supabase/timer_upgrade.sql`
+  - `sponsor_leads`
+- Apply every pending file in `supabase/migrations/`, including the timer anchor,
+  public vote-write closure, atomic score function, and sponsor-lead intake.
 - Re-run Supabase security/performance advisors after the migration.
 
 Do not run a public show with the original permissive `001_schema.sql` policies still active.
@@ -105,9 +105,13 @@ Required bot variables:
 - `TWITCH_BOT_USERNAME`
 - `TWITCH_OAUTH_TOKEN`
 - `TWITCH_CHANNEL`
-- root Supabase URL + anon key
+- root Supabase URL + anon key (read-only match discovery)
+- `NEXT_PUBLIC_SITE_URL`
+- `KILLSWITCH_ADMIN_USER`
+- `KILLSWITCH_ADMIN_PASSWORD`
 
-The bot should use only the public vote-insert policy. Never give the Twitch process the Supabase service-role key.
+The bot never receives the Supabase service-role key and does not insert into `votes` directly.
+It submits one vote at a time through the protected producer API and enforces a per-viewer cooldown.
 
 ## 7. Go / no-go checklist
 
@@ -115,11 +119,11 @@ Go live only when all are true:
 
 - Health endpoint ready
 - Producer routes require auth
-- Public users cannot mutate matches or players
+- Public users cannot mutate matches, players, or votes
 - Four editor embeds load reliably
 - Timer stays synchronized across two different browsers
 - Scores update through Realtime
-- Votes appear through Realtime
+- Producer/Twitch-ingested votes appear through Realtime
 - Modifier animation/effect is visible
 - Application form persists a test application
 - OBS browser source survives a full round
@@ -127,4 +131,4 @@ Go live only when all are true:
 
 ## 8. After rehearsal
 
-Delete or finish rehearsal matches, remove fake applications, and replace placeholder contestant information before sharing the production URL publicly.
+Finish rehearsal matches, remove test intake records, and replace placeholder contestant information before sharing the production URL publicly.
