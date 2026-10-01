@@ -122,26 +122,42 @@ export default function AdminControl() {
 
     const ch = supabase
       .channel(`admin-${activeId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, (p) => {
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "matches", filter: `id=eq.${activeId}` },
+        (p) => {
         const row = p.new as Match;
         setMatches((prev) => prev.map((m) => (m.id === row.id ? row : m)));
         if (row.active_modifier !== "none") {
           addLog(`Modifier fired: ${row.active_modifier.replace(/-/g, " ").toUpperCase()}`, "modifier");
         }
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "players" }, (p) => {
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "players", filter: `match_id=eq.${activeId}` },
+        (p) => {
         const row = p.new as Player;
         setPlayers((prev) => {
           const idx = prev.findIndex((c) => c.id === row.id);
           return idx >= 0 ? prev.map((c, i) => (i === idx ? row : c)) : [...prev, row];
         });
-      })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "votes" }, (p) => {
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "votes", filter: `match_id=eq.${activeId}` },
+        (p) => {
         const row = p.new as Vote;
         setVotes((prev) => [...prev, row]);
         addLog(`Vote received: !${row.command}`, "vote");
-      })
-      .subscribe();
+        },
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          void loadMatchData(activeId);
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -226,18 +242,24 @@ export default function AdminControl() {
       await startTimer(match.timer || 600);
       return;
     }
-    if (status === "lobby") {
+    if (status === "paused") {
       await pauseTimer();
+      return;
+    }
+    if (status === "lobby") {
+      await updateMatch({ status: "lobby" });
+      addLog("Match returned to lobby", "info");
       return;
     }
     if (match.status === "active") {
       try {
         await adminMutation({ action: "pauseTimer", matchId: activeId });
       } catch {
-        // A final status update below still ends the match even if pausing failed.
+        // Finalizing still takes precedence if the pause write fails.
       }
     }
     await updateMatch({ status: "finished" });
+    addLog("Match finished", "info");
   }
 
   async function updateScore(playerId: string, playerName: string, delta: number) {
@@ -248,6 +270,26 @@ export default function AdminControl() {
       addLog(`${playerName} score → ${updated.score}`, "score");
     } catch (error) {
       addLog(`Score update failed: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
+    }
+  }
+
+  async function upsertPlayer(slot: number, field: "name" | "language" | "replit_url", value: string) {
+    if (!activeId) return;
+    try {
+      await adminMutation({
+        action: "upsertPlayer",
+        matchId: activeId,
+        slot,
+        field,
+        value,
+      });
+      await loadMatchData(activeId);
+      addLog(`Slot ${slot} ${field.replace("_", " ")} updated`, "info");
+    } catch (error) {
+      addLog(
+        `Player update failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "error",
+      );
     }
   }
 
@@ -359,7 +401,7 @@ export default function AdminControl() {
 
             {match && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                {(["lobby", "active", "finished"] as const).map((s) => (
+                {(["lobby", "active", "paused", "finished"] as const).map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -376,9 +418,9 @@ export default function AdminControl() {
                 <div className="ml-auto flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() => void startTimer(600)}
+                    onClick={() => void startTimer(match.timer || 600)}
                     className="rounded bg-slate-800 p-1.5 text-slate-400 hover:text-[#39FF14]"
-                    title="Start 10m timer"
+                    title="Resume remaining time"
                   >
                     <Play className="size-3.5" />
                   </button>
@@ -392,9 +434,18 @@ export default function AdminControl() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => void startTimer(600)}
+                    className="rounded bg-slate-800 px-2 py-1 text-[10px] font-black text-slate-400 hover:text-white"
+                    title="Restart timer at 10:00"
+                  >
+                    ↻ 10m
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => void advanceRound()}
-                    className="rounded bg-slate-800 p-1.5 text-slate-400 hover:text-[#8A2BE2]"
-                    title="Next round"
+                    disabled={match.round >= match.best_of}
+                    className="rounded bg-slate-800 p-1.5 text-slate-400 hover:text-[#8A2BE2] disabled:cursor-not-allowed disabled:opacity-30"
+                    title={match.round >= match.best_of ? "Final round reached" : "Next round"}
                   >
                     <SkipForward className="size-3.5" />
                   </button>
@@ -457,32 +508,56 @@ export default function AdminControl() {
                           </span>
                         )}
                       </div>
-                      {p ? (
-                        <>
-                          <p className="mt-1 text-sm font-bold">{p.name}</p>
-                          {p.language && (
-                            <p className="text-[10px] text-slate-500">{p.language}</p>
-                          )}
-                          <div className="mt-2 flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => updateScore(p.id, p.name, -1)}
-                              className="rounded bg-slate-800 p-1 text-slate-400 hover:text-red-400"
-                            >
-                              <Minus className="size-3" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => updateScore(p.id, p.name, 1)}
-                              className="rounded bg-slate-800 p-1 text-slate-400 hover:text-[#39FF14]"
-                            >
-                              <Plus className="size-3" />
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="mt-2 text-xs text-slate-700">Empty</p>
-                      )}
+                      <div className="mt-2 space-y-2">
+                        <input
+                          aria-label={`Slot ${slot} name`}
+                          defaultValue={p?.name ?? ""}
+                          placeholder={`Player ${slot}`}
+                          onBlur={(event) => {
+                            const value = event.currentTarget.value.trim();
+                            if (value !== (p?.name ?? "")) void upsertPlayer(slot, "name", value);
+                          }}
+                          className="w-full rounded border border-slate-800 bg-slate-950 px-2 py-1.5 text-xs text-white outline-none focus:border-[#39FF14]/50"
+                        />
+                        <input
+                          aria-label={`Slot ${slot} language`}
+                          defaultValue={p?.language ?? ""}
+                          placeholder="Language"
+                          onBlur={(event) => {
+                            const value = event.currentTarget.value.trim();
+                            if (value !== (p?.language ?? "")) void upsertPlayer(slot, "language", value);
+                          }}
+                          className="w-full rounded border border-slate-800 bg-slate-950 px-2 py-1.5 text-xs text-white outline-none focus:border-[#2979FF]/50"
+                        />
+                        <input
+                          aria-label={`Slot ${slot} embed URL`}
+                          defaultValue={p?.replit_url ?? ""}
+                          placeholder="HTTPS editor embed URL"
+                          onBlur={(event) => {
+                            const value = event.currentTarget.value.trim();
+                            if (value !== (p?.replit_url ?? "")) void upsertPlayer(slot, "replit_url", value);
+                          }}
+                          className="w-full rounded border border-slate-800 bg-slate-950 px-2 py-1.5 text-[10px] text-white outline-none focus:border-[#8A2BE2]/50"
+                        />
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={!p}
+                            onClick={() => p && updateScore(p.id, p.name, -1)}
+                            className="rounded bg-slate-800 p-1 text-slate-400 hover:text-red-400 disabled:opacity-30"
+                          >
+                            <Minus className="size-3" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!p}
+                            onClick={() => p && updateScore(p.id, p.name, 1)}
+                            className="rounded bg-slate-800 p-1 text-slate-400 hover:text-[#39FF14] disabled:opacity-30"
+                          >
+                            <Plus className="size-3" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
