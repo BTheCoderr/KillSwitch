@@ -28,18 +28,14 @@ const geistMono = Geist_Mono({
 const description =
   "Live competitive coding battles with OBS-first arenas, audience modifiers, synchronized producer controls, match-aware live explanation, tournaments, and replays.";
 
-const ogTitle = "Killswitch — Livestream-ready live coding MVP";
+const ogTitle = "Killswitch — Live coding battle broadcast";
 
 function siteOrigin(): URL {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL;
   if (typeof explicit === "string" && explicit.length > 0) {
     return new URL(explicit.startsWith("http") ? explicit : `https://${explicit}`);
   }
-  const vercel = process.env.VERCEL_URL;
-  if (typeof vercel === "string" && vercel.length > 0) {
-    return new URL(`https://${vercel}`);
-  }
-  return new URL("http://localhost:3000");
+  return new URL("https://kill-switch-beta.vercel.app");
 }
 
 export const metadata: Metadata = {
